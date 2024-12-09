@@ -1,8 +1,17 @@
 import pygame
+import random
 import time
 
-######## CARD CREATION ########
 
+# Pygame Set Up #
+pygame.init()
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption('Poker Game')
+
+
+# CARD CREATION #
 class Card:
     def __init__(self, number, suit):
         self.n = number
@@ -15,3 +24,6 @@ class Card:
                 self.s = "hearts"
             case 3:
                 self.s = "spades"
+    
+
+    

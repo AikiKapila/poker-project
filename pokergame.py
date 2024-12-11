@@ -56,12 +56,13 @@ random.shuffle(deck)
 # Function to draw a card from the deck # //You need to add somewhere for the popped card to land (player/ai hand)
 def draw_card(deck, hand):
     if deck:
-        card = deck.pop(0)  # Remove the top card from the deck
-        return card
+        hand.append(deck[0])
+        deck.pop(0)
     else:
         return None  # Return None if the deck is empty
 
-
+def display_card(card):
+    pass
 
 # Main Game Loop #
 running = True

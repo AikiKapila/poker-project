@@ -8,6 +8,7 @@ screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
 
+
 # Chip Creation #
 class Chip:
     def __init__(self, value, image=None):

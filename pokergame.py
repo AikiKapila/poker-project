@@ -9,6 +9,8 @@ screen_height = 1000
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
 
+#Keoki first change
+
 # CARD CREATION #
 class Card:
     def __init__(self, number, suit, image=None):

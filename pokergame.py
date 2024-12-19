@@ -1,13 +1,17 @@
 import pygame
 import random
 
-
 # Pygame Set Up #
 pygame.init()
 screen_width = 1400
-screen_height = 1000
+screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
+
+# Chip Creation #
+class Chip:
+    def __init__(self, value, image=None):
+        self.image = image
 
 # CARD CREATION #
 class Card:
@@ -26,9 +30,6 @@ class Card:
         self.s = suit
         self.image = image
         
-    def set_image(self, image):
-        self.image = image
-        
 # Attaching Card Images to Names #
 def load_card_images(cards):
     for card in cards:
@@ -43,6 +44,15 @@ def create_deck():
     suits = ['H', 'D', 'C', 'S']
     deck = [Card(number, suit) for suit in suits for number in range(1, 13)]
     return deck
+
+# Function to make chips #
+def create_chips():
+    values = [1, 5, 10]
+    chips = []
+    for i in len(values):
+        chips.append(Chip())
+
+
 
 # Function to draw a card from the deck #
 def draw_card(deck, hand):
@@ -59,12 +69,12 @@ def draw_hand(draw_num, deck, hand):
 def display_card(card, index, total_cards, hand):
     card_image = card.image
     if hand == player_hand:
-        hand_pos = 7
+        hand_pos = 9
     elif hand == opponent_hand:
-        hand_pos = 2
+        hand_pos = 3
         card_image = pygame.image.load(f"card-back.jpg")
     elif hand == community_cards:
-        hand_pos = 4
+        hand_pos = 6
     else:
         print("bruh (check display_card)")
 
@@ -85,7 +95,7 @@ def display_card(card, index, total_cards, hand):
         total_width = total_cards * card_width + (total_cards - 1) * spacing
         start_x = (screen_width - total_width) // 2
         x_position = start_x + index * (card_width + spacing)
-        y_position = screen_height * hand_pos // 8 - card_height   
+        y_position = screen_height * hand_pos // 10 - card_height   
 
         # Debugging #
         #print(f"Card {card.n}{card.s} at position ({x_position}, {y_position})")
@@ -101,14 +111,13 @@ def display_hand(hand):
 
 def River():
     draw_hand(3, deck, community_cards)
-    
-
 
 def Turn():
     draw_card(deck, community_cards)
 
 def Flop():
     draw_card(deck, community_cards)
+
 
 # Betting #
 
@@ -135,6 +144,8 @@ random.shuffle(deck)
 player_hand = []
 opponent_hand = []
 community_cards = []
+player_chips = []
+opponent_chips = []
 initial_money = 1000
 player_money = initial_money
 opponent_money = initial_money
@@ -152,6 +163,8 @@ while running:
        draw_hand(2, deck, player_hand)
        draw_hand(2, deck, opponent_hand)
        River()
+       Turn()
+       Flop()
        hand_drawn = True
 
     display_hand(player_hand)

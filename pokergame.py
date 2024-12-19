@@ -74,7 +74,7 @@ def display_card(card, index, total_cards):
         y_position = screen_height * 5 // 6 - card_height
 
         # Debugging #
-        print(f"Card {card.n}{card.s} at position ({x_position}, {y_position})")
+        #print(f"Card {card.n}{card.s} at position ({x_position}, {y_position})")
 
         screen.blit(scaled_image, (x_position, y_position))
 
@@ -103,8 +103,10 @@ while running:
        draw_hand(2, deck, player_hand)
        card_drawn = True
 
+    display_hand(player_hand)
     
     pygame.display.flip()
+    pygame.time.Clock().tick(60)
 
 pygame.quit()
 

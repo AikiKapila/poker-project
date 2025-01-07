@@ -121,6 +121,9 @@ bet_turn = 0
 global prev_bet
 prev_bet = 0
 
+def bet_phase():
+    pass
+
 def Check():
     bet_turn += 1
 
@@ -173,6 +176,7 @@ while running:
        draw_hand(2, deck, player_hand)
        draw_hand(2, deck, opponent_hand)
        Flop()
+       bet_phase()
        Turn()
        River()
        hand_drawn = True

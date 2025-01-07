@@ -8,7 +8,6 @@ screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
 
-
 # Chip Creation #
 class Chip:
     def __init__(self, value, image=None):
@@ -48,16 +47,23 @@ def create_deck():
 
 # Function to make chips #
 def create_chips():
-    values = [1, 5, 10]
+    values = [1, 5, 10, 25, 100]
+    colors = [(255, 255, 255), (255, 0, 0), (0, 0, 255), (0, 255, 0), (0, 0, 0)]
     chips = []
-    for i in len(values):
-        chips.append(Chip())
+    for value, color in zip(values, colors):
+        chip = Chip(value)
 
+        #chip_image = pygame.surface((50, 50), pygame.SRCALPHA)
+        #pygame.draw.circle(chip_image, color, (25, 25), 25)
+        #chip.image = chip_image
 
+        chips.append(chip)
+
+    return chips
 
 # Function to draw a card from the deck #
 def draw_card(deck, hand):
-    if deck:   
+    if deck:
         hand.append(deck[0])
         deck.pop(0)
     else:
@@ -96,7 +102,7 @@ def display_card(card, index, total_cards, hand):
         total_width = total_cards * card_width + (total_cards - 1) * spacing
         start_x = (screen_width - total_width) // 2
         x_position = start_x + index * (card_width + spacing)
-        y_position = screen_height * hand_pos // 10 - card_height   
+        y_position = screen_height * hand_pos // 10 - card_height
 
         # Debugging #
         #print(f"Card {card.n}{card.s} at position ({x_position}, {y_position})")
@@ -107,35 +113,38 @@ def display_hand(hand):
     for index, card in enumerate(hand):
         display_card(card, index, len(hand), hand)
 
+# Betting #
 
-# River Turn Flop #
+global bet_turn
+bet_turn = 0
+# 0 is neutral, 1 is player, 2 is AI #
+global prev_bet
+prev_bet = 0
 
-def River():
-    draw_hand(3, deck, community_cards)
+def Check():
+    bet_turn += 1
 
-def Turn():
-    draw_card(deck, community_cards)
+def Call():
+    bet_turn += 1
+
+def Raise(amount):
+    prev_bet = amount
+    bet_turn += 1
+
+def Fold():
+
+    bet_turn += 1
 
 def Flop():
     draw_card(deck, community_cards)
 
+def Turn():
+    draw_card(deck, community_cards)
 
-# Betting #
+def River():
+    draw_hand(3, deck, community_cards)
+    bet_turn = 0
 
-def Check():
-    pass
-
-def Call():
-    pass
-
-def Raise():
-    pass
-
-def Fold():
-    pass
-
-def bet():
-    pass
 
 
 # Creating the deck and images and empty player hand #
@@ -145,8 +154,8 @@ random.shuffle(deck)
 player_hand = []
 opponent_hand = []
 community_cards = []
-player_chips = []
-opponent_chips = []
+player_chips = create_chips()
+opponent_chips = create_chips()
 initial_money = 1000
 player_money = initial_money
 opponent_money = initial_money
@@ -163,9 +172,9 @@ while running:
     if not hand_drawn:
        draw_hand(2, deck, player_hand)
        draw_hand(2, deck, opponent_hand)
-       River()
-       Turn()
        Flop()
+       Turn()
+       River()
        hand_drawn = True
 
     display_hand(player_hand)

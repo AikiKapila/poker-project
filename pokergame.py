@@ -1,6 +1,11 @@
+
 import pygame
 import random
 import math
+import pygame_widgets
+from pygame_widgets.slider import Slider
+from pygame_widgets.textbox import TextBox
+
 # Pygame Set Up #
 pygame.init()
 screen_width = 1400
@@ -139,7 +144,39 @@ class Button:
         global turn_complete
         if self.rect.collidepoint(mouse_pos) and self.action:
             self.action()
+#slider #
+bet_check=0
+def bet_checkfunc():
+    global bet_check
+    bet_check+=1
+def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
+    slider = Slider(screen, 100, 100, 800, 40, min=minval,max=maxval, step=1)
+    output = TextBox(screen, 475, 200, 50, 50, fontSize=30)
+    
+    output.disable()  # Act as label instead of textbox
+    #displaying bet button #
+    betbutton= Button(1075, 700, 100, 50, "Bet",bet_checkfunc())
+    while run:
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                run = False
+                quit()
+            elif bet_check==1:
+                    bet_check=0
+                    return slider.getValue()
 
+
+
+        screen.fill((255, 255, 255))
+
+        output.setText(slider.getValue())
+
+        pygame_widgets.update(events)
+        pygame.display.update()
+
+    
 # Button Actions #
 
 # Betting #
@@ -204,6 +241,7 @@ def Check():
     pot += 0
     bet_turn -= 1
     print("Check")
+    
 
 def Call():
     global pot
@@ -217,9 +255,10 @@ def Call():
 def Raise():
     global prev_bet, last_player, pot, player_money
     #Have slider to define amount#
-    #prev_bet = amount
-    #player_money -= amount
-    #pot += amount
+    amount=raiseslider(True,prev_bet,player_money)
+    prev_bet = amount
+    player_money -= amount
+    pot += amount
     if bet_turn == 1:
         last_player = playercount
     else:

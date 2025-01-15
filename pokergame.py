@@ -192,7 +192,8 @@ def player_turn():
                 mouse_pos = pygame.mouse.get_pos()
                 for button in buttons:
                     if button.is_hovered(mouse_pos):
-                        button.handle_click(mouse_pos) 
+                        button.handle_click(mouse_pos)
+                        print("Button")
                         break
 
 def AI_turn():
@@ -212,6 +213,8 @@ def Call():
     pot += prev_bet
     player_money -= prev_bet
     bet_turn -= 1
+    print(player_money)
+    print(pot)
     print("Call")
 
 def Raise():

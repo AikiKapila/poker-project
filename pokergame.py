@@ -1,6 +1,6 @@
 import pygame
 import random
-
+import math
 # Pygame Set Up #
 pygame.init()
 screen_width = 1400
@@ -9,9 +9,9 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
 
 # Chip Creation #
-class Chip:
-    def __init__(self, value, image=None):
-        self.image = image
+class Pile:
+    def __init__(self, size):
+        self.size = size
 
 # CARD CREATION #
 class Card:
@@ -39,27 +39,16 @@ def load_card_images(cards):
         except pygame.error as e:
             print(f"Error loading image {card_image_file}: {e}")
 
+def load_pile_images(size):
+    pile_images = []
+    for i in range(math.ceil(size/100)):
+        pile_images.append(f"pile-of-chips.webp")
+
 # Function to make deck #
 def create_deck():
     suits = ['H', 'D', 'C', 'S']
     deck = [Card(number, suit) for suit in suits for number in range(1, 13)]
     return deck
-
-# Function to make chips #
-def create_chips():
-    values = [1, 5, 10, 25, 100]
-    colors = [(255, 255, 255), (255, 0, 0), (0, 0, 255), (0, 255, 0), (0, 0, 0)]
-    chips = []
-    for value, color in zip(values, colors):
-        chip = Chip(value)
-
-        #chip_image = pygame.surface((50, 50), pygame.SRCALPHA)
-        #pygame.draw.circle(chip_image, color, (25, 25), 25)
-        #chip.image = chip_image
-
-        chips.append(chip)
-
-    return chips
 
 # Function to draw a card from the deck #
 def draw_card(deck, hand):
@@ -113,42 +102,6 @@ def display_hand(hand):
     for index, card in enumerate(hand):
         display_card(card, index, len(hand), hand)
 
-# Betting #
-
-global bet_turn
-bet_turn = 0
-# 0 is neutral, 1 is player, 2 is AI #
-global prev_bet
-prev_bet = 0
-
-def bet_phase():
-    pass
-
-def Check():
-    bet_turn += 1
-
-def Call():
-    bet_turn += 1
-
-def Raise(amount):
-    prev_bet = amount
-    bet_turn += 1
-
-def Fold():
-
-    bet_turn += 1
-
-def Flop():
-    draw_card(deck, community_cards)
-
-def Turn():
-    draw_card(deck, community_cards)
-
-def River():
-    draw_hand(3, deck, community_cards)
-    bet_turn = 0
-
-
 
 # Creating the deck and images and empty player hand #
 deck = create_deck()
@@ -157,11 +110,135 @@ random.shuffle(deck)
 player_hand = []
 opponent_hand = []
 community_cards = []
-player_chips = create_chips()
-opponent_chips = create_chips()
 initial_money = 1000
+pot = 0
 player_money = initial_money
 opponent_money = initial_money
+player_chips = Pile(player_money)
+opponent_chips = Pile(opponent_money)
+
+
+class Button:
+    def __init__(self, x, y, width, height, text, action=None):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.action = action
+        self.font = pygame.font.Font(None, 36)
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, (255, 255, 255), self.rect)
+        pygame.draw.rect(surface, (0, 0, 0), self.rect, 3)  # Border
+        text_surface = self.font.render(self.text, True, (0, 0, 0))
+        surface.blit(text_surface, (self.rect.x + (self.rect.width - text_surface.get_width()) // 2,
+                                    self.rect.y + (self.rect.height - text_surface.get_height()) // 2))
+
+    def is_hovered(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
+
+    def handle_click(self, mouse_pos):
+        global turn_complete
+        if self.rect.collidepoint(mouse_pos) and self.action:
+            self.action()
+
+# Button Actions #
+
+# Betting #
+
+playercount = 2 # can be changed later if we want to add more players without needing to code in #
+bet_turn = 1
+
+def bet_phase():
+    global prev_bet, last_player, bet_turn, round_complete
+    # 0 is neutral, 1 is player, 2 is AI #
+    prev_bet = 0
+    last_player = playercount
+    round_complete = False
+    
+    while not round_complete:
+        if bet_turn == 1:
+            player_turn()
+            print("player turn")
+        else:
+            # AI turn to be added #
+            AI_turn()
+
+        if bet_turn != last_player:
+            bet_turn = (bet_turn % playercount) + 1
+        else:
+            round_complete = True
+
+    print("Betting round complete")
+    bet_turn = 1
+
+def player_turn():
+    # display buttons#
+    raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
+    fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
+    buttons = [raise_button, fold_button]
+
+    if prev_bet > 0:
+        call_button = Button(950, 700, 100, 50, "Call", Call)
+        buttons.insert(0, call_button)
+    else:
+        check_button = Button(950, 700, 100, 50, "Check", Check)
+        buttons.insert(0, check_button)
+    
+    while True:
+        for button in buttons:
+            button.draw(screen)
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                for button in buttons:
+                    if button.is_hovered(mouse_pos):
+                        button.handle_click(mouse_pos) 
+                        break
+
+def AI_turn():
+    pass
+
+def Check():
+    global bet_turn
+    global pot
+    pot += 0
+    bet_turn -= 1
+    print("Check")
+
+def Call():
+    global pot
+    global player_money
+    global bet_turn
+    pot += prev_bet
+    player_money -= prev_bet
+    bet_turn -= 1
+    print("Call")
+
+def Raise():
+    global prev_bet, last_player, pot, player_money
+    #Have slider to define amount#
+    #prev_bet = amount
+    #player_money -= amount
+    #pot += amount
+    if bet_turn == 1:
+        last_player = playercount
+    else:
+        last_player = bet_turn - 1
+    print("Raise")
+
+def Fold():
+    print("Fold")
+
+def Flop():
+    draw_card(deck, community_cards)
+
+def Turn():
+    draw_card(deck, community_cards)
+
+def River():
+    global bet_turn
+    draw_hand(3, deck, community_cards)
+    bet_turn = 0
 
 # Main Game Loop #
 running = True
@@ -173,22 +250,25 @@ while running:
     
     screen.fill((0, 128, 0))
     if not hand_drawn:
-       draw_hand(2, deck, player_hand)
-       draw_hand(2, deck, opponent_hand)
-       Flop()
-       bet_phase()
-       Turn()
-       River()
-       hand_drawn = True
-
+        draw_hand(2, deck, player_hand)
+        draw_hand(2, deck, opponent_hand)
+        hand_drawn = True
+    
     display_hand(player_hand)
     display_hand(opponent_hand) 
     display_hand(community_cards)
+    bet_phase()
+    Flop()
+    bet_phase()
+    Turn()
+    bet_phase()
+    River()
+    bet_phase()
 
+
+    
 
     pygame.display.flip()
     pygame.time.Clock().tick(60)
 
 pygame.quit()
-
-

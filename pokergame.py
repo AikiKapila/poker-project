@@ -154,9 +154,7 @@ def raiseslider(run,minval,maxval):#true or false,minumum value, max value,
     global bet_check
     slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090, 635, 80, 50, fontSize=30)
-    #displaying bet button #
-    betbutton = Button(1075, 700, 100, 50, "Bet", bet_checkfunc(0))
-    betbutton.draw(screen)
+    output.disable()
     while run:
         events = pygame.event.get()
         for event in events:
@@ -204,6 +202,7 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
+    global buttons
     # display buttons#
     raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
     fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
@@ -254,12 +253,15 @@ def Call():
 in_raise = False
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise
+    global prev_bet, last_player, pot, player_money, in_raise, buttons
     #Have slider to define amount#
     in_raise = True
     amount=raiseslider(True,prev_bet,player_money)
     confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)
+    buttons = [confirm_button, cancel_button]
+    buttons.draw(screen)
+    print("brh")
     prev_bet = amount
     player_money -= amount
     pot += amount
@@ -268,6 +270,9 @@ def Raise():
     else:
         last_player = bet_turn - 1
     print("Raise")
+
+def ConfirmRaise():
+    pass
 
 def Fold():
     print("Fold")

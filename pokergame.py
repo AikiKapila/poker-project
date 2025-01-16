@@ -144,18 +144,19 @@ class Button:
         global turn_complete
         if self.rect.collidepoint(mouse_pos) and self.action:
             self.action()
-#slider #
+#slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
-def bet_checkfunc():
+def bet_checkfunc(value):
     global bet_check
-    bet_check+=1
+    bet_check = value
+
 def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
-    slider = Slider(screen, 100, 100, 800, 40, min=minval,max=maxval, step=1)
-    output = TextBox(screen, 475, 200, 50, 50, fontSize=30)
-    
-    output.disable()  # Act as label instead of textbox
+    global bet_check
+    slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
+    output = TextBox(screen, 1090, 635, 80, 50, fontSize=30)
     #displaying bet button #
-    betbutton= Button(1075, 700, 100, 50, "Bet",bet_checkfunc())
+    betbutton = Button(1075, 700, 100, 50, "Bet", bet_checkfunc(0))
+    betbutton.draw(screen)
     while run:
         events = pygame.event.get()
         for event in events:
@@ -163,13 +164,8 @@ def raiseslider(run,minval,maxval):#true or false,minumum value, max value,
                 pygame.quit()
                 run = False
                 quit()
-            elif bet_check==1:
-                    bet_check=0
+            elif bet_check > 0:
                     return slider.getValue()
-
-
-
-        screen.fill((255, 255, 255))
 
         output.setText(slider.getValue())
 
@@ -255,10 +251,15 @@ def Call():
     print(pot)
     print("Call")
 
+in_raise = False
+
 def Raise():
-    global prev_bet, last_player, pot, player_money
+    global prev_bet, last_player, pot, player_money, in_raise
     #Have slider to define amount#
+    in_raise = True
     amount=raiseslider(True,prev_bet,player_money)
+    confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
+    cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)
     prev_bet = amount
     player_money -= amount
     pot += amount

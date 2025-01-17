@@ -144,6 +144,10 @@ class Button:
         global turn_complete
         if self.rect.collidepoint(mouse_pos) and self.action:
             self.action()
+def delete_button(button): #Delete button
+    global buttons
+    if button in buttons:
+        buttons.remove(button)
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
 def bet_checkfunc(value):
@@ -202,12 +206,11 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
-    global buttons
+    global buttons, raise_button, fold_button, call_button, check_button
     # display buttons#
-    if not in_raise:
-        raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
-        fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
-        buttons = [raise_button, fold_button]
+    raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
+    fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
+    buttons = [raise_button, fold_button]
 
     if prev_bet > 0:
         call_button = Button(950, 700, 100, 50, "Call", Call)
@@ -233,17 +236,14 @@ def AI_turn():
     pass
 
 def Check():
-    global bet_turn
-    global pot
+    global bet_turn, pot
     pot += 0
     bet_turn -= 1
     print("Check")
     
 
 def Call():
-    global pot
-    global player_money
-    global bet_turn
+    global pot, player_money, bet_turn
     pot += prev_bet
     player_money -= prev_bet
     bet_turn -= 1
@@ -254,9 +254,15 @@ def Call():
 in_raise = False
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button
     #Have slider to define amount#
     in_raise = True
+    delete_button(raise_button)
+    if prev_bet == 0:
+        delete_button(check_button)
+    else:
+        delete_button(call_button)
+    delete_button(fold_button)
     amount=raiseslider(True,prev_bet,player_money)
     confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)

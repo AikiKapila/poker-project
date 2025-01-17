@@ -145,18 +145,10 @@ class Button:
         if self.rect.collidepoint(mouse_pos) and self.action:
             self.action()
 def delete_button(screen, button):
-    """
-    Disables the given button by setting its active property to False, 
-    clearing its area from the screen, and updating the display.
-    
-    Args:
-        screen: The Pygame surface where the button is drawn.
-        button: The Button object to be disabled.
-    """
-    button.active = False  # Mark the button as inactive
-    # Clear the button area by filling it with the background color
-    pygame.draw.rect(screen, (0, 128, 0), button.rect)  # Replace (0, 128, 0) with your background color
-    # Update the display area corresponding to the button
+    global buttons
+    buttons.remove(button)
+    button.active = False
+    pygame.draw.rect(screen, (0, 128, 0), button.rect)
     pygame.display.update(button.rect)
 
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
@@ -168,7 +160,7 @@ def bet_checkfunc(value):
 
 def delete_slider(x,y,width,height): #delete slider with given coords of slider(can be used for textbox)
     # Assuming the slider's position and size are known:
-    slider_rect = pygame.Rect(x-50, y-50, width+100, height+100)  # Replace with your slider's actual position and size
+    slider_rect = pygame.Rect(x-50, y-10, width+100, height+50)  # Replace with your slider's actual position and size
     expanded_slider_rect = slider_rect.inflate(100, 100)  # Increase the width and height to cover the circles
 
     pygame.draw.rect(screen, (0, 128, 0), slider_rect)  # Fill the slider area with the background color
@@ -185,8 +177,7 @@ def bet_phase():
     # 0 is neutral, 1 is player, 2 is AI #
     prev_bet = 0
     last_player = playercount
-    round_complete = False
-    
+    round_complete = False    
     while not round_complete:
         if bet_turn == 1:
             player_turn()
@@ -208,14 +199,12 @@ def bet_phase():
 
     print("Betting round complete")
     bet_turn = 1
-Raise_checker=False
+in_raise=False
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,Raise_checker,bet_turn
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn
     # display buttons#
-
     if in_raise:
-        
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)
         delete_slider(973, 575, 300, 50)
@@ -223,13 +212,14 @@ def player_turn():
     raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
     fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
     buttons = [raise_button, fold_button]
-
     if prev_bet > 0:
         call_button = Button(950, 700, 100, 50, "Call", Call)
-        buttons.insert(0, call_button)
+        buttons.append(call_button)
     else:
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
+    
+    in_raise = False
     playerturn_running=True
     while playerturn_running:
         for button in buttons:
@@ -243,31 +233,52 @@ def player_turn():
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
                         print("Button")
-                        if Raise_checker==True:
+                        if in_raise:
                             ConfirmRaise()
-                            Raise_checker=False
-                            
+                            in_raise=False
                             playerturn_running=True
                         else: 
                             print("past raise checker")
                             playerturn_running=False
-                    
-                
-            
         
 def AI_turn():
     global bet_turn,last_player#Both lines change later when Ai i implemented
     bet_turn=last_player
     print("ai turn")
  
+def check_betting_round_complete():
+    global bet_turn, last_player, round_complete
+    if bet_turn == last_player:  # All players have acted
+        round_complete = True
+        move_to_next_phase()
+
+def move_to_next_phase():
+    global phase, bet_turn
+    if phase == "pre-flop":
+        Flop()
+        phase = "post-flop"
+        bet_turn = 1
+    elif phase == "river":
+        Showdown()
+        phase = "showdown"
+    else:
+        community_rect = pygame.Rect(450, 350, 500, 200)
+        pygame.draw.rect(screen, (0, 128, 0), community_rect)
+        if phase == "post-flop":
+            Turn()
+            phase = "turn"
+            bet_turn = 1
+        elif phase == "turn":
+            River()
+            phase = "river"
+            bet_turn = 1
+    print(phase)
 
 def Check():
     global bet_turn, pot
     pot += 0
     bet_turn -= 1
     print("Check")
-    
-    
 
 def Call():
     global pot, player_money, bet_turn
@@ -278,17 +289,16 @@ def Call():
     print(pot)
     print("Call")
 
-in_raise = False
-
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button,Raise_checker
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button,in_raise
     #Have slider to define amount#
-    Raise_checker=True
+    in_raise=True
     slider = Slider(screen, 973, 575, 300, 50, min=prev_bet, max=player_money, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090, 645, 80, 50, fontSize=30)
     output.disable()
-   
 
+    confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
+    cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
 
     in_raise = True
     delete_button(screen,raise_button)
@@ -297,10 +307,6 @@ def Raise():
     else:
         delete_button(screen,call_button)
     delete_button(screen,fold_button)
-    
-    confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
-    cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
-    
     buttons = [confirm_button, cancel_button]
     
     print(pot)
@@ -317,8 +323,6 @@ def Raise():
                 pygame.quit()
                 run = False
                 quit()
-
-   
         output.setText(slider.getValue())
         amount=slider.getValue()
 
@@ -337,9 +341,7 @@ def Raise():
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
 
-
     print(pot)
-    print("brh")
     prev_bet = amount
     player_money -= amount
     pot += amount
@@ -351,7 +353,6 @@ def Raise():
     print(amount)
 
 def ConfirmRaise():
-    
     global bet_check, in_raise
     in_raise = False
     bet_check+=1
@@ -365,19 +366,32 @@ def Fold():
     print("Fold")
 
 def Flop():
-    draw_card(deck, community_cards)
+    global bet_turn
+    draw_hand(3, deck, community_cards)
+    display_hand(community_cards)
+    bet_turn = 0
 
 def Turn():
+    global bet_turn
     draw_card(deck, community_cards)
+    display_hand(community_cards)
+    bet_turn = 0
 
 def River():
     global bet_turn
-    draw_hand(3, deck, community_cards)
+    draw_card(deck, community_cards)
+    display_hand(community_cards)
     bet_turn = 0
+
+def Showdown():
+    # Win conditions #
+    pass
 
 # Main Game Loop #
 running = True
-hand_drawn = False
+phase = "pre-flop"
+draw_hand(2, deck, player_hand)
+draw_hand(2, deck, opponent_hand)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -385,25 +399,14 @@ while running:
             pygame.quit()
 
     screen.fill((0, 128, 0))
-    if not hand_drawn:
-        draw_hand(2, deck, player_hand)
-        draw_hand(2, deck, opponent_hand)
-        hand_drawn = True
     
     display_hand(player_hand)
     display_hand(opponent_hand) 
     display_hand(community_cards)
-    bet_phase()
-    print("bet phase 1 done")
-    Flop()
-    bet_phase()
-    Turn()
-    bet_phase()
-    River()
-    bet_phase()
-
-
-    
+    while phase != "showdown":
+        bet_phase()
+        move_to_next_phase()
+        pygame.display.flip()
 
     pygame.display.flip()
     pygame.time.Clock().tick(60)

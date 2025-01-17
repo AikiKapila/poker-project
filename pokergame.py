@@ -166,9 +166,9 @@ def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
-def delete_slider(x,y,z,a): #delete slider with given coords of slider(can be used for textbox)
+def delete_slider(x,y,width,height): #delete slider with given coords of slider(can be used for textbox)
     # Assuming the slider's position and size are known:
-    slider_rect = pygame.Rect(x, y, z, a)  # Replace with your slider's actual position and size
+    slider_rect = pygame.Rect(x-50, y-50, width+100, height+100)  # Replace with your slider's actual position and size
     expanded_slider_rect = slider_rect.inflate(100, 100)  # Increase the width and height to cover the circles
 
     pygame.draw.rect(screen, (0, 128, 0), slider_rect)  # Fill the slider area with the background color

@@ -160,15 +160,15 @@ def delete_button(screen, button):
     pygame.display.update(button.rect)
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
-def bet_checkfunc(run,minval,maxval):
+def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
+def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
     global bet_check
-    slider = Slider(screen, 973, 575, 300, 50, min=minval, max=maxval, step=1, onRelease=bet_checkfunc)
-    output = TextBox(screen, 1090, 645, 80, 50, fontSize=30)
+    slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
+    output = TextBox(screen, 1090,645, 80, 50, fontSize=30)
     output.disable()
-
     while run:
         events = pygame.event.get()
         for event in events:
@@ -176,15 +176,13 @@ def bet_checkfunc(run,minval,maxval):
                 pygame.quit()
                 run = False
                 quit()
+            elif bet_check > 0:
+                    return slider.getValue()
 
-        output.setText(slider.getValue())  # Display current slider value
-        slider.draw()  # Draw the slider
-        output.draw()  # Draw the output textbox
+        output.setText(slider.getValue())
 
         pygame_widgets.update(events)
         pygame.display.update()
-
-    return slider.getValue()  # Return the value from the slider when done
 
     
 # Button Actions #
@@ -266,31 +264,23 @@ def Call():
 in_raise = False
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button
+    #Have slider to define amount#
     in_raise = True
-
-    # Delete existing buttons
-    for button in buttons:
-        delete_button(screen, button)
-
-    # Create the slider for the raise amount
-    amount = raiseslider(True, prev_bet, player_money)
-
-    # If the user cancels the raise, simply return
-    if amount is None:
-        player_turn()
-        return
-
-    # Add new buttons for confirmation and cancellation
-    confirm_button = Button(1015, 700, 100, 50, "Confirm", lambda: ConfirmRaise(amount))
+    delete_button(screen,raise_button)
+    if prev_bet == 0:
+        delete_button(screen,check_button)
+    else:
+        delete_button(screen,call_button)
+    delete_button(screen,fold_button)
+   
+    confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
-
+    print("hi")
+    
     buttons = [confirm_button, cancel_button]
-
-    # Draw the new buttons
     for button in buttons:
-        button.draw(screen)
-    pygame.display.flip()  # Update the display to show new buttons
+      button.draw(screen)
     print(pot)
     amount=raiseslider(True,prev_bet,player_money)
     print(pot)
@@ -304,27 +294,11 @@ def Raise():
         last_player = bet_turn - 1
     print("Raise")
 
-def ConfirmRaise(amount):
-    global prev_bet, pot, player_money, last_player, bet_turn
-    if amount > player_money:  # Ensure player has enough money
-        print("Not enough money to raise!")
-        return
+def ConfirmRaise():
+    global bet_check
+    bet_check+=1
+    print("hi")
 
-    prev_bet = amount
-    player_money -= amount
-    pot += amount
-
-    # Set the last player
-    last_player = bet_turn if bet_turn != 1 else playercount
-
-    print(f"Raised by {amount}. Pot: {pot}, Player Money: {player_money}")
-
-    # Clear buttons after confirming
-    for button in buttons:
-        delete_button(screen, button)
-
-    # Move to the next player's turn
-    player_turn()  # Start the next turn for the player
 def Fold():
     print("Fold")
 

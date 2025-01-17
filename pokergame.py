@@ -191,21 +191,29 @@ def bet_phase():
         if bet_turn == 1:
             player_turn()
             print("player turn")
+            print("Bet turn number is" , bet_turn)
+            print("after playerturn bet turn is", bet_turn)
         else:
             # AI turn to be added #
             AI_turn()
-
-        if bet_turn != last_player:
-            bet_turn = (bet_turn % playercount) + 1
-        else:
-            round_complete = True
+            print("ai turn")
+            
+            print("past both turns")
+            print(bet_turn)
+            print(last_player)
+            if bet_turn != last_player:
+                bet_turn = (bet_turn % playercount) + 1
+            else:
+                round_complete = True
 
     print("Betting round complete")
     bet_turn = 1
+Raise_checker=False
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,Raise_checker,bet_turn
     # display buttons#
+
     if in_raise:
         
         delete_button(screen,confirm_button)
@@ -222,29 +230,43 @@ def player_turn():
     else:
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
-    
-    while True:
+    playerturn_running=True
+    while playerturn_running:
         for button in buttons:
             button.draw(screen)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
+                print("mousebuttondown")
                 mouse_pos = pygame.mouse.get_pos()
                 for button in buttons:
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
                         print("Button")
-                        ConfirmRaise()
-                        break
-
+                        if Raise_checker==True:
+                            ConfirmRaise()
+                            Raise_checker=False
+                            
+                            playerturn_running=True
+                        else: 
+                            print("past raise checker")
+                            playerturn_running=False
+                    
+                
+            
+        
 def AI_turn():
-    pass
+    global bet_turn,last_player#Both lines change later when Ai i implemented
+    bet_turn=last_player
+    print("ai turn")
+ 
 
 def Check():
     global bet_turn, pot
     pot += 0
     bet_turn -= 1
     print("Check")
+    
     
 
 def Call():
@@ -259,9 +281,9 @@ def Call():
 in_raise = False
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button,Raise_checker
     #Have slider to define amount#
-
+    Raise_checker=True
     slider = Slider(screen, 973, 575, 300, 50, min=prev_bet, max=player_money, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090, 645, 80, 50, fontSize=30)
     output.disable()
@@ -372,6 +394,7 @@ while running:
     display_hand(opponent_hand) 
     display_hand(community_cards)
     bet_phase()
+    print("bet phase 1 done")
     Flop()
     bet_phase()
     Turn()

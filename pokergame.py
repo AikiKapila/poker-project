@@ -458,7 +458,7 @@ def Raise():
     delete_button(screen,fold_button)
     buttons = [confirm_button, cancel_button]
     
-    print("The Current Pot is: " + pot)
+    print("The Current Pot is: " + str(pot))
     
     while in_raise:
         amount=min

@@ -144,10 +144,20 @@ class Button:
         global turn_complete
         if self.rect.collidepoint(mouse_pos) and self.action:
             self.action()
-def delete_button(button): #Delete button
-    global buttons
-    if button in buttons:
-        buttons.remove(button)
+def delete_button(screen, button):
+    """
+    Disables the given button by setting its active property to False, 
+    clearing its area from the screen, and updating the display.
+    
+    Args:
+        screen: The Pygame surface where the button is drawn.
+        button: The Button object to be disabled.
+    """
+    button.active = False  # Mark the button as inactive
+    # Clear the button area by filling it with the background color
+    pygame.draw.rect(screen, (0, 128, 0), button.rect)  # Replace (0, 128, 0) with your background color
+    # Update the display area corresponding to the button
+    pygame.display.update(button.rect)
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
 def bet_checkfunc(value):
@@ -257,12 +267,12 @@ def Raise():
     global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button
     #Have slider to define amount#
     in_raise = True
-    delete_button(raise_button)
+    delete_button(screen,raise_button)
     if prev_bet == 0:
-        delete_button(check_button)
+        delete_button(screen,check_button)
     else:
-        delete_button(call_button)
-    delete_button(fold_button)
+        delete_button(screen,call_button)
+    delete_button(screen,fold_button)
     amount=raiseslider(True,prev_bet,player_money)
     confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)

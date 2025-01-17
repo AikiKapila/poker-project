@@ -165,30 +165,6 @@ def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
-def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
-    global bet_check,amount
-
-    slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
-    output = TextBox(screen, 1090,645, 80, 50, fontSize=30)
-    output.disable()
-    while run:
-        events = pygame.event.get()
-        amount=slider.getValue()
-        print(amount)
-        for event in events:
-
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                run = False
-                quit()
-           
-                    
-
-        output.setText(slider.getValue())
-
-        pygame_widgets.update(events)
-        pygame.display.update()
-
     
 # Button Actions #
 
@@ -221,8 +197,11 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button
     # display buttons#
+    if in_raise:
+        delete_button(screen,confirm_button)
+        delete_button(screen,cancel_button)
     raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
     fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
     buttons = [raise_button, fold_button]
@@ -269,8 +248,13 @@ def Call():
 in_raise = False
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button
     #Have slider to define amount#
+
+    slider = Slider(screen, 973, 575, 300, 50, min=prev_bet, max=player_money, step=1, onRelease=bet_checkfunc)
+    output = TextBox(screen, 1090, 645, 80, 50, fontSize=30)
+    output.disable()
+
     in_raise = True
     delete_button(screen,raise_button)
     if prev_bet == 0:
@@ -281,13 +265,29 @@ def Raise():
    
     confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
-    print("hi")
     
     buttons = [confirm_button, cancel_button]
-    for button in buttons:
-      button.draw(screen)
+    
     print(pot)
-    raiseslider(True,prev_bet,player_money)
+    
+    while in_raise:
+        slider.draw()
+        output.setText(slider.getValue())
+        output.draw()
+        for button in buttons:
+            button.draw(screen)
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                for button in buttons:
+                    if button.is_hovered(mouse_pos):
+                        button.handle_click(mouse_pos)
+
+
     print(pot)
     print("brh")
     prev_bet = amount
@@ -300,7 +300,8 @@ def Raise():
     print("Raise")
 
 def ConfirmRaise():
-    global bet_check
+    global bet_check, in_raise
+    in_raise = False
     bet_check+=1
     print("hi")
 

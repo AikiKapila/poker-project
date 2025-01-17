@@ -164,7 +164,7 @@ def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
-def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
+def raiseslider(run,minval,maxval):#true or false,minumum value, max value,
     global bet_check
     slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090,645, 80, 50, fontSize=30)
@@ -274,16 +274,16 @@ def Raise():
         delete_button(screen,call_button)
     delete_button(screen,fold_button)
    
-    confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
-    cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)
+    confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
+    cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
     print("hi")
     
     buttons = [confirm_button, cancel_button]
     for button in buttons:
       button.draw(screen)
-      
+    print(pot)
     amount=raiseslider(True,prev_bet,player_money)
-
+    print(pot)
     print("brh")
     prev_bet = amount
     player_money -= amount
@@ -295,7 +295,9 @@ def Raise():
     print("Raise")
 
 def ConfirmRaise():
-    pass
+    global bet_check
+    bet_check+=1
+    print("hi")
 
 def Fold():
     print("Fold")

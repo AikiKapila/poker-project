@@ -160,24 +160,29 @@ def delete_button(screen, button):
     pygame.display.update(button.rect)
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
+amount=0
 def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
 def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
-    global bet_check
+    global bet_check,amount
+
     slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090,645, 80, 50, fontSize=30)
     output.disable()
     while run:
         events = pygame.event.get()
+        amount=slider.getValue()
+        print(amount)
         for event in events:
+
             if event.type == pygame.QUIT:
                 pygame.quit()
                 run = False
                 quit()
-            elif bet_check > 0:
-                    return slider.getValue()
+           
+                    
 
         output.setText(slider.getValue())
 
@@ -282,7 +287,7 @@ def Raise():
     for button in buttons:
       button.draw(screen)
     print(pot)
-    amount=raiseslider(True,prev_bet,player_money)
+    raiseslider(True,prev_bet,player_money)
     print(pot)
     print("brh")
     prev_bet = amount

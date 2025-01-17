@@ -204,9 +204,10 @@ def bet_phase():
 def player_turn():
     global buttons
     # display buttons#
-    raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
-    fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
-    buttons = [raise_button, fold_button]
+    if not in_raise:
+        raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
+        fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
+        buttons = [raise_button, fold_button]
 
     if prev_bet > 0:
         call_button = Button(950, 700, 100, 50, "Call", Call)

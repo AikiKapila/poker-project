@@ -273,11 +273,17 @@ def Raise():
     else:
         delete_button(screen,call_button)
     delete_button(screen,fold_button)
-    amount=raiseslider(True,prev_bet,player_money)
+   
     confirm_button = Button(1075, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1200, 700, 100, 50, "Cancel", player_turn)
+    print("hi")
+    
     buttons = [confirm_button, cancel_button]
-    buttons.draw(screen)
+    for button in buttons:
+      button.draw(screen)
+      
+    amount=raiseslider(True,prev_bet,player_money)
+
     print("brh")
     prev_bet = amount
     player_money -= amount
@@ -312,7 +318,8 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
+            pygame.quit()
+
     screen.fill((0, 128, 0))
     if not hand_drawn:
         draw_hand(2, deck, player_hand)

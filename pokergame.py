@@ -282,9 +282,10 @@ playercount = 2 # can be changed later if we want to add more players without ne
 bet_turn = 1
 
 def bet_phase():
-    global prev_bet, last_player, bet_turn, round_complete
+    global prev_bet, last_player, bet_turn, round_complete, in_raise
     # 0 is neutral, 1 is player, 2 is AI #
     prev_bet = 0
+    in_raise = False
     last_player = playercount
     round_complete = False    
     while not round_complete:
@@ -308,7 +309,6 @@ def bet_phase():
 
     print("Betting round complete")
     bet_turn = 1
-in_raise=False
 
 def player_turn():
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn
@@ -327,8 +327,6 @@ def player_turn():
     else:
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
-    
-    in_raise = False
     playerturn_running=True
     while playerturn_running:
         for button in buttons:
@@ -381,16 +379,17 @@ def AI_turn():
             pot += raise_amount
             opponent_money -= raise_amount
             print(f"AI raises {raise_amount}")
-        elif hand_rank >= 4:  # Decent hands like Three of a Kind, Two Pair
+        #elif hand_rank >= 4:  # Decent hands like Three of a Kind, Two Pair
+        else: #AI folding is currently commented out for debugging#
             # Call with decent hands
             call_amount = prev_bet
             prev_bet = call_amount
             pot += call_amount
             opponent_money -= call_amount
             print(f"AI calls {call_amount}")
-        else:  # Weak hand, AI will fold
-            print("AI folds")
-            return  # End the turn, AI folds
+        #else:  # Weak hand, AI will fold
+        #    print("AI folds")
+        #    return  # End the turn, AI folds
 
     # Update bet turn to player (or to the next player in the game)
     bet_turn = last_player
@@ -439,7 +438,7 @@ def Call():
     print("Call")
 
 def Raise():
-    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button,in_raise
+    global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button
     #Have slider to define amount#
     in_raise=True
     slider = Slider(screen, 973, 575, 300, 50, min=prev_bet, max=player_money, step=1, onRelease=bet_checkfunc)
@@ -449,7 +448,6 @@ def Raise():
     confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
 
-    in_raise = True
     delete_button(screen,raise_button)
     if prev_bet == 0:
         delete_button(screen,check_button)
@@ -502,9 +500,10 @@ def Raise():
     print(amount)
 
 def ConfirmRaise():
-    global bet_check, in_raise
+    global bet_check, in_raise, bet_turn
     in_raise = False
     bet_check+=1
+    bet_turn += 1
     delete_slider(973, 575, 300, 50)
     delete_slider(1090, 645, 80, 50)
     delete_button(screen,confirm_button)

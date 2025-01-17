@@ -153,7 +153,7 @@ def bet_checkfunc(value):
 def raiseslider(run,minval,maxval):#true or false,minumum value, max value, 
     global bet_check
     slider = Slider(screen, 973, 575, 300, 50, min=minval,max=maxval, step=1, onRelease=bet_checkfunc)
-    output = TextBox(screen, 1090, 635, 80, 50, fontSize=30)
+    output = TextBox(screen, 1090,645, 80, 50, fontSize=30)
     output.disable()
     while run:
         events = pygame.event.get()

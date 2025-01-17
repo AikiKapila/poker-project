@@ -12,7 +12,6 @@ screen_width = 1400
 screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
-
 # Chip Creation #
 class Pile:
     def __init__(self, size):
@@ -167,8 +166,10 @@ def bet_checkfunc(value):
     bet_check = value
 
 def delete_slider(x,y,z,a): #delete slider with given coords of slider(can be used for textbox)
+def delete_slider(x,y,width,height): #delete slider with given coords of slider(can be used for textbox)
     # Assuming the slider's position and size are known:
     slider_rect = pygame.Rect(x, y, z, a)  # Replace with your slider's actual position and size
+    slider_rect = pygame.Rect(x-50, y-50, width+100, height+100)  # Replace with your slider's actual position and size
     expanded_slider_rect = slider_rect.inflate(100, 100)  # Increase the width and height to cover the circles
 
     pygame.draw.rect(screen, (0, 128, 0), slider_rect)  # Fill the slider area with the background color
@@ -251,10 +252,9 @@ def player_turn():
                         else: 
                             print("past raise checker")
                             playerturn_running=False
+          
                     
                 
-            
-        
 def AI_turn():
     global bet_turn,last_player#Both lines change later when Ai i implemented
     bet_turn=last_player
@@ -266,7 +266,6 @@ def Check():
     pot += 0
     bet_turn -= 1
     print("Check")
-    
     
 
 def Call():
@@ -303,7 +302,6 @@ def Raise():
     
     buttons = [confirm_button, cancel_button]
     
-    print(pot)
     
     while in_raise:
         amount=min
@@ -401,6 +399,8 @@ while running:
     bet_phase()
     River()
     bet_phase()
+    determine_winner()  # Determine the winner after the final community card
+    running=False
 
 
     
@@ -408,4 +408,5 @@ while running:
     pygame.display.flip()
     pygame.time.Clock().tick(60)
 
+pygame.quit()
 pygame.quit()

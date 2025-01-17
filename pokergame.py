@@ -158,6 +158,7 @@ def delete_button(screen, button):
     pygame.draw.rect(screen, (0, 128, 0), button.rect)  # Replace (0, 128, 0) with your background color
     # Update the display area corresponding to the button
     pygame.display.update(button.rect)
+
 #slider # Link to slider code explained: https://pygamewidgets.readthedocs.io/en/latest/widgets/slider/
 bet_check=0
 amount=0
@@ -165,7 +166,13 @@ def bet_checkfunc(value):
     global bet_check
     bet_check = value
 
-    
+def delete_slider(x,y,z,a): #delete slider with given coords of slider(can be used for textbox)
+    # Assuming the slider's position and size are known:
+    slider_rect = pygame.Rect(x, y, z, a)  # Replace with your slider's actual position and size
+    expanded_slider_rect = slider_rect.inflate(100, 100)  # Increase the width and height to cover the circles
+
+    pygame.draw.rect(screen, (0, 128, 0), slider_rect)  # Fill the slider area with the background color
+    pygame.display.update()  # Update the display
 # Button Actions #
 
 # Betting #
@@ -200,8 +207,11 @@ def player_turn():
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button
     # display buttons#
     if in_raise:
+        
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)
+        delete_slider(973, 575, 300, 50)
+        delete_slider(1090, 645, 80, 50)
     raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
     fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
     buttons = [raise_button, fold_button]
@@ -224,6 +234,7 @@ def player_turn():
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
                         print("Button")
+                        ConfirmRaise()
                         break
 
 def AI_turn():
@@ -254,6 +265,8 @@ def Raise():
     slider = Slider(screen, 973, 575, 300, 50, min=prev_bet, max=player_money, step=1, onRelease=bet_checkfunc)
     output = TextBox(screen, 1090, 645, 80, 50, fontSize=30)
     output.disable()
+   
+
 
     in_raise = True
     delete_button(screen,raise_button)
@@ -262,7 +275,7 @@ def Raise():
     else:
         delete_button(screen,call_button)
     delete_button(screen,fold_button)
-   
+    
     confirm_button = Button(1015, 700, 100, 50, "Confirm", ConfirmRaise)
     cancel_button = Button(1135, 700, 100, 50, "Cancel", player_turn)
     
@@ -271,9 +284,24 @@ def Raise():
     print(pot)
     
     while in_raise:
+        amount=min
         slider.draw()
         output.setText(slider.getValue())
         output.draw()
+   
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                run = False
+                quit()
+
+   
+        output.setText(slider.getValue())
+        amount=slider.getValue()
+
+        pygame_widgets.update(events)
+        pygame.display.update()
         for button in buttons:
             button.draw(screen)
         pygame.display.update()
@@ -298,12 +326,18 @@ def Raise():
     else:
         last_player = bet_turn - 1
     print("Raise")
+    print(amount)
 
 def ConfirmRaise():
+    
     global bet_check, in_raise
     in_raise = False
     bet_check+=1
-    print("hi")
+    delete_slider(973, 575, 300, 50)
+    delete_slider(1090, 645, 80, 50)
+    delete_button(screen,confirm_button)
+    delete_button(screen,cancel_button)
+    print(pot)
 
 def Fold():
     print("Fold")

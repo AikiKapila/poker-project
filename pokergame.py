@@ -5,6 +5,7 @@ import math
 import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
+from collections import Counter
 
 # Pygame Set Up #
 pygame.init()
@@ -12,7 +13,6 @@ screen_width = 1400
 screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
-
 # Chip Creation #
 class Pile:
     def __init__(self, size):
@@ -34,6 +34,115 @@ class Card:
                 self.n = number
         self.s = suit
         self.image = image
+oppenent_win=0
+player_win=0
+
+
+# Hand evaluation functions
+def get_card_values(cards):
+    values = []
+    for card in cards:
+        if card.n == "A":
+            values.append(14)
+        elif card.n == "K":
+            values.append(13)
+        elif card.n == "Q":
+            values.append(12)
+        elif card.n == "J":
+            values.append(11)
+        else:
+            values.append(card.n)
+    return values
+
+
+def is_flush(cards):
+    return len(set(card.s for card in cards)) == 1
+
+def is_straight(cards):
+    values = sorted(get_card_values(cards))
+    return values == list(range(values[0], values[0] + 5))
+
+def get_hand_rank(cards):
+    values = get_card_values(cards)
+    counts = Counter(values)
+    most_common = counts.most_common()
+    
+    is_flush_hand = is_flush(cards)
+    is_straight_hand = is_straight(cards)
+
+    # Check for straight flush (flush + straight)
+    if is_flush_hand and is_straight_hand:
+        if max(values) == 14 and min(values) == 10:  # Royal flush check (Ace high straight flush)
+            return 10, values  # Royal Flush
+        return 9, values  # Straight Flush
+
+    # Check for four of a kind
+    if most_common[0][1] == 4:
+        return 8, values
+
+    # Full house: Three of a kind + pair
+    if most_common[0][1] == 3 and most_common[1][1] == 2:
+        return 7, values
+
+    # Flush
+    if is_flush_hand:
+        return 6, sorted(values, reverse=True)
+
+    # Straight
+    if is_straight_hand:
+        return 5, sorted(values, reverse=True)
+
+    # Three of a kind
+    if most_common[0][1] == 3:
+        return 4, values
+
+    # Two pair
+    if most_common[0][1] == 2 and most_common[1][1] == 2:
+        return 3, values
+
+    # One pair
+    if most_common[0][1] == 2:
+        return 2, values
+
+    # High card
+    return 1, sorted(values, reverse=True)
+
+def compare_hands(hand1, hand2):
+    global oppenent_win,player_win
+    rank1, values1 = get_hand_rank(hand1)
+    rank2, values2 = get_hand_rank(hand2)
+    
+    if rank1 > rank2:
+        return "Player wins!"
+    elif rank2 > rank1:
+        return "Opponent wins!"
+    else:
+        # If same rank, compare by card values
+        if values1 > values2:
+            return "Player wins!"
+        elif values2 > values1:
+            oppenent_win+=1
+            return "Opponent wins!"
+        else:
+            player_win+=1
+            return "It's a tie!"
+
+def determine_winner():
+    global oppenent_win,player_win,pot,player_money,opponent_money
+    player_best_hand = player_hand + community_cards
+    opponent_best_hand = opponent_hand + community_cards
+    winner = compare_hands(player_best_hand, opponent_best_hand)
+    print(winner)
+    if player_win==1:
+        player_money+=pot
+        player_win=0
+        print(player_money)
+    else:
+        opponent_money+=pot
+        oppenent_win=0
+        
+
+    
         
 # Attaching Card Images to Names #
 def load_card_images(cards):
@@ -242,9 +351,49 @@ def player_turn():
                             playerturn_running=False
         
 def AI_turn():
-    global bet_turn,last_player#Both lines change later when Ai i implemented
-    bet_turn=last_player
-    print("ai turn")
+    global bet_turn, last_player, opponent_money, prev_bet, pot
+
+    print("AI turn")
+    
+    # Evaluate AI's hand
+    opponent_best_hand = opponent_hand + community_cards
+    hand_rank, values = get_hand_rank(opponent_best_hand)
+    
+    # If there's no previous bet, AI will check (or raise if it has a very strong hand)
+    if prev_bet == 0:
+        if hand_rank >= 7:  # Strong hands like Full House, Straight, Flush
+            # Raise with strong hands if no one has bet yet
+            raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
+            prev_bet = raise_amount
+            pot += raise_amount
+            opponent_money -= raise_amount
+            print(f"AI raises {raise_amount}")
+        else:
+            # Otherwise, AI checks with weak hands
+            print("AI checks")
+    
+    # If there's a previous bet, AI can call, raise, or fold based on its hand
+    elif prev_bet > 0:
+        if hand_rank >= 7:  # Strong hands (Full House, Straight, Flush, etc.)
+            # Raise if the hand is strong
+            raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
+            prev_bet = raise_amount
+            pot += raise_amount
+            opponent_money -= raise_amount
+            print(f"AI raises {raise_amount}")
+        elif hand_rank >= 4:  # Decent hands like Three of a Kind, Two Pair
+            # Call with decent hands
+            call_amount = prev_bet
+            prev_bet = call_amount
+            pot += call_amount
+            opponent_money -= call_amount
+            print(f"AI calls {call_amount}")
+        else:  # Weak hand, AI will fold
+            print("AI folds")
+            return  # End the turn, AI folds
+
+    # Update bet turn to player (or to the next player in the game)
+    bet_turn = last_player
  
 def check_betting_round_complete():
     global bet_turn, last_player, round_complete
@@ -309,7 +458,7 @@ def Raise():
     delete_button(screen,fold_button)
     buttons = [confirm_button, cancel_button]
     
-    print(pot)
+    print("The Current Pot is: " + pot)
     
     while in_raise:
         amount=min

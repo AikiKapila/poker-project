@@ -321,6 +321,7 @@ def player_turn():
     raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
     fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
     buttons = [raise_button, fold_button]
+    in_raise = False
     if prev_bet > 0:
         call_button = Button(950, 700, 100, 50, "Call", Call)
         buttons.append(call_button)

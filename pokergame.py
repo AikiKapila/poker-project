@@ -2,10 +2,12 @@
 import pygame
 import random
 import math
+import time
 import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
+from itertools import combinations
 
 # Pygame Set Up #
 pygame.init()
@@ -17,7 +19,26 @@ pygame.display.set_caption('Poker Game')
 class Pile:
     def __init__(self, size):
         self.size = size
-
+def determine_winner(player_hand, opponent_hand, community_cards): #check win
+    """
+    Determines the winner between the player's and opponent's hands in Texas Hold 'Em.
+    
+    :param player_hand: List of Card objects for the player's hand
+    :param opponent_hand: List of Card objects for the opponent's hand
+    :param community_cards: List of Card objects for the community cards
+    :return: A string declaring the winner
+    """
+    # Combine hand and community cards to evaluate the best 5-card hand
+    player_combinations = combinations(player_hand + community_cards, 5)
+    opponent_combinations = combinations(opponent_hand + community_cards, 5)
+    
+    # Determine the best hand for the player and opponent
+    best_player_hand = max(player_combinations, key=get_hand_rank)
+    best_opponent_hand = max(opponent_combinations, key=get_hand_rank)
+    
+    # Compare the hands
+    result = compare_hands(best_player_hand, best_opponent_hand)
+    return result
 # CARD CREATION #
 class Card:
     def __init__(self, number, suit, image=None):
@@ -171,7 +192,36 @@ def draw_card(deck, hand):
         deck.pop(0)
     else:
         return None  # Return None if the deck is empty
+all_in_check_number=0
+def checkallin(round_number):#checks if all players went all in and finishes round because of it
+    global player_money,opponent_money,all_in_check_number
+    phase=round_number
+    if player_money + opponent_money==0:
+        if phase == "pre-flop":
+            Flop()
 
+            phase = "post-flop"
+        elif phase == "river":
+            Showdown()
+            print("showdown")
+
+            phase = "showdown"
+        else:
+            community_rect = pygame.Rect(450, 350, 500, 200)
+            pygame.draw.rect(screen, (0, 128, 0), community_rect)
+            if phase == "post-flop":
+                Turn()
+
+                phase = "turn"
+            elif phase == "turn":
+                River()
+
+                phase = "river"
+          
+    else:
+        all_in_check_number=0
+
+        
 def draw_hand(draw_num, deck, hand):
     for i in range(draw_num):
         draw_card(deck, hand)
@@ -306,21 +356,32 @@ def bet_phase():
                 bet_turn = (bet_turn % playercount) + 1
             else:
                 round_complete = True
-
+       
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()  # Ensures the program exits completely
     print("Betting round complete")
     bet_turn = 1
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn
+    
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn,player_money
     # display buttons#
+    print("this is player money",player_money)
     if in_raise:
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)
         delete_slider(973, 575, 300, 50)
         delete_slider(1090, 645, 80, 50)
-    raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
-    fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
-    buttons = [raise_button, fold_button]
+    if player_money!=0:
+        global raise_button,fold_button
+        raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
+        fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
+        buttons=[raise_button,fold_button]
+    elif player_money==0:
+         fold_button = Button(1200, 700, 100, 50, "Fold", Fold)
+         buttons = [fold_button]
     in_raise = False
     if prev_bet > 0:
         call_button = Button(950, 700, 100, 50, "Call", Call)
@@ -402,25 +463,45 @@ def check_betting_round_complete():
         move_to_next_phase()
 
 def move_to_next_phase():
-    global phase, bet_turn
+    global phase, bet_turn,all_in_check_number
     if phase == "pre-flop":
-        Flop()
-        phase = "post-flop"
-        bet_turn = 1
+     
+        checkallin(phase)
+        if all_in_check_number==0:
+            Flop()
+            phase = "post-flop"
+            bet_turn = 1
+        else:
+            phase = "post-flop"
     elif phase == "river":
-        Showdown()
-        phase = "showdown"
+      
+        checkallin(phase)
+        if all_in_check_number==0:
+            Showdown()
+            phase = "showdown"
+        else:
+            phase = "showdown"
     else:
         community_rect = pygame.Rect(450, 350, 500, 200)
         pygame.draw.rect(screen, (0, 128, 0), community_rect)
         if phase == "post-flop":
-            Turn()
-            phase = "turn"
-            bet_turn = 1
+          
+            checkallin(phase)
+            if all_in_check_number==0:
+                Turn()
+                phase = "turn"
+                bet_turn = 1
+            else:
+                phase = "turn"
         elif phase == "turn":
-            River()
-            phase = "river"
-            bet_turn = 1
+            
+            checkallin(phase)
+            if all_in_check_number==0:
+                River()
+                phase = "river"
+                bet_turn = 1
+            else:
+                phase = "river"
     print(phase)
 
 def Check():
@@ -532,9 +613,10 @@ def River():
     display_hand(community_cards)
     bet_turn = 0
 
-def Showdown():
-    # Win conditions #
-    pass
+def Showdown():#final phase determines winner
+    global player_hand,opponent_hand,community_cards
+    winner=determine_winner()
+    print(winner)
 
 # Main Game Loop #
 running = True
@@ -557,7 +639,12 @@ while running:
         move_to_next_phase()
         pygame.display.flip()
 
-    pygame.display.flip()
-    pygame.time.Clock().tick(60)
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running=False
+            quit()
 
 pygame.quit()
+quit()

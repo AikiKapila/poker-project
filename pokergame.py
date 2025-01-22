@@ -226,6 +226,7 @@ def bet_phase():
 def player_turn():
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in
     # display buttons#
+    print("Player has: $" + str(player_money))
     if in_raise:
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)
@@ -317,11 +318,12 @@ def check_betting_round_complete():
         move_to_next_phase()
 
 def move_to_next_phase():
-    global phase, bet_turn, revealing_cards
+    global phase, bet_turn, player_lost
     if phase == "pre-flop":
         Flop()
         phase = "post-flop"
         bet_turn = 1
+        player_lost = False
     elif phase == "river":
         Showdown()
         phase = "showdown"

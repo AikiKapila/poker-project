@@ -281,7 +281,6 @@ opponent_money = initial_money
 player_chips = Pile(player_money)
 opponent_chips = Pile(opponent_money)
 
-
 class Button:
     def __init__(self, x, y, width, height, text, action=None):
         self.rect = pygame.Rect(x, y, width, height)
@@ -463,16 +462,11 @@ def check_betting_round_complete():
         move_to_next_phase()
 
 def move_to_next_phase():
-    global phase, bet_turn,all_in_check_number
+    global phase, bet_turn
     if phase == "pre-flop":
-     
-        checkallin(phase)
-        if all_in_check_number==0:
-            Flop()
-            phase = "post-flop"
-            bet_turn = 1
-        else:
-            phase = "post-flop"
+        Flop()
+        phase = "post-flop"
+        bet_turn = 1
     elif phase == "river":
       
         checkallin(phase)
@@ -593,7 +587,10 @@ def ConfirmRaise():
     print(pot)
 
 def Fold():
+    global player_lost
     print("Fold")
+    player_lost = True
+    ResolveGame()
 
 def Flop():
     global bet_turn
@@ -613,10 +610,9 @@ def River():
     display_hand(community_cards)
     bet_turn = 0
 
-def Showdown():#final phase determines winner
-    global player_hand,opponent_hand,community_cards
-    winner=determine_winner()
-    print(winner)
+def Showdown():
+    # Win conditions #
+    pass
 
 # Main Game Loop #
 running = True

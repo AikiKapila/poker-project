@@ -2,7 +2,6 @@ import pygame
 import random
 import math
 import pygame_widgets
-import itertools
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
@@ -37,23 +36,6 @@ class Card:
 oppenent_win=0
 player_win=0
 
-
-# Hand evaluation functions
-def get_card_values(cards):
-    values = []
-    for card in cards:
-        if card.n == "A":
-            values.append(14)
-        elif card.n == "K":
-            values.append(13)
-        elif card.n == "Q":
-            values.append(12)
-        elif card.n == "J":
-            values.append(11)
-        else:
-            values.append(card.n)
-    return values 
-        
 # Attaching Card Images to Names #
 def load_card_images(cards):
     for card in cards:
@@ -459,7 +441,7 @@ def Showdown():
     # Win conditions #
     revealing_cards = True
     display_hand(opponent_hand)
-    print(compare_hands(player_hand, opponent_hand))
+    print(compare_hands(player_hand + community_cards, opponent_hand + community_cards))
     #checkwin()
 
 def ResolveGame():
@@ -469,9 +451,6 @@ def ResolveGame():
     else:
         player_money += pot
     pot = 0
-
-
-
 
 oppenent_win=0
 player_win=0

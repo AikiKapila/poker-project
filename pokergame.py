@@ -368,7 +368,7 @@ def player_turn():
     
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn,player_money
     # display buttons#
-    print("this is player money",player_money)
+    print("Player has: $" + str(player_money))
     if in_raise:
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)

@@ -538,6 +538,14 @@ def Showdown():
     # Win conditions #
     pass
 
+def ResolveGame():
+    global opponent_money, pot
+    if player_lost:
+        opponent_money += pot
+    else:
+        player_money += pot
+    pot = 0
+
 # Main Game Loop #
 running = True
 phase = "pre-flop"

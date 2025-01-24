@@ -6,6 +6,7 @@ from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
 
+
 # Pygame Set Up #
 pygame.init()
 screen_width = 1400
@@ -16,6 +17,31 @@ pygame.display.set_caption('Poker Game')
 class Pile:
     def __init__(self, size):
         self.size = size
+        
+def display_text(screen, text, value, coordinates, font_size=24, color=(255, 255, 255)):
+    """
+    Displays text with a value on the Pygame screen.
+
+    Args:
+        screen: The Pygame display surface.
+        text (str): The label or text to display.
+        value (any): The value to display alongside the text.
+        coordinates (tuple): The (x, y) position to render the text.
+        font: A Pygame font object.
+        color (tuple): RGB color of the text (default is white).
+    """
+    font = pygame.font.Font(None, font_size)
+    
+    # Combine the text and value
+    full_text = f"{text}: {value}"
+    # Render the text
+    text_surface = font.render(full_text, True, color)
+    # Get the rectangle of the text surface
+    text_rect = text_surface.get_rect()
+    # Set the rectangle's top-left corner to the given coordinates
+    text_rect.topleft = coordinates
+    # Blit the text surface onto the screen
+    screen.blit(text_surface, text_rect)
 
 # CARD CREATION #
 class Card:
@@ -33,6 +59,7 @@ class Card:
                 self.n = number
         self.s = suit
         self.image = image
+
 oppenent_win=0
 player_win=0
 
@@ -206,7 +233,7 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running
     # display buttons#
     print("Player has: $" + str(player_money))
     if in_raise:
@@ -246,6 +273,10 @@ def player_turn():
                         else: 
                             print("past raise checker")
                             playerturn_running=False
+            elif event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                quit()
         
 def AI_turn():
     global bet_turn, last_player, opponent_money, prev_bet, pot
@@ -258,7 +289,7 @@ def AI_turn():
     
     # If there's no previous bet, AI will check (or raise if it has a very strong hand)
     if prev_bet == 0:
-        if hand_rank >= 7:  # Strong hands like Full House, Straight, Flush
+        if hand_rank >= 5:  # Strong hands like Full House, Straight, Flush
             # Raise with strong hands if no one has bet yet
             raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
             prev_bet = raise_amount
@@ -271,7 +302,7 @@ def AI_turn():
     
     # If there's a previous bet, AI can call, raise, or fold based on its hand
     elif prev_bet > 0:
-        if hand_rank >= 7:  # Strong hands (Full House, Straight, Flush, etc.)
+        if hand_rank >= 5:  # Strong hands (Full House, Straight, Flush, etc.)
             # Raise if the hand is strong
             raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
             prev_bet = raise_amount
@@ -499,8 +530,11 @@ def get_hand_rank(cards):
         return 8, values
 
     # Full house: Three of a kind + pair
-    if most_common[0][1] == 3 and most_common[1][1] == 2:
-        return 7, values
+    try:
+        if most_common[0][1] == 3 and most_common[1][1] == 2:
+            return 7, values
+    except IndexError:
+        pass
 
     # Flush
     if is_flush_hand:
@@ -515,8 +549,11 @@ def get_hand_rank(cards):
         return 4, values
 
     # Two pair
-    if most_common[0][1] == 2 and most_common[1][1] == 2:
-        return 3, values
+    try:
+        if most_common[0][1] == 2 and most_common[1][1] == 2:
+            return 3, values
+    except IndexError:
+        pass
 
     # One pair
     if most_common[0][1] == 2:
@@ -568,20 +605,22 @@ all_in = False
 draw_hand(2, deck, player_hand)
 draw_hand(2, deck, opponent_hand)
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            pygame.quit()
-
     screen.fill((0, 128, 0))
     display_hand(player_hand)
     display_hand(opponent_hand) 
     display_hand(community_cards)
+    display_text(screen, "Player Chips", player_money, (200,800))
+    display_text(screen, "Opponents Chips", opponent_money, (200,250))
+    display_text(screen, "Pot", pot, (200, 550))
+    pygame.display.flip()
+    for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
     while phase != "showdown":
         bet_phase()
         move_to_next_phase()
         pygame.display.flip()
-
     pygame.display.flip()
     pygame.time.Clock().tick(60)
 

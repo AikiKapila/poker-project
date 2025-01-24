@@ -347,7 +347,7 @@ def check_betting_round_complete():
 
 def render_chips():
     clear_chips = pygame.Rect(0, 0, 350, 1500)
-    pygame.draw.rect(screen, (0,128,128), clear_chips)
+    pygame.draw.rect(screen, (0,128,0), clear_chips)
     display_text(screen, "Player Chips", player_money, (100,800))
     display_text(screen, "Opponents Chips", opponent_money, (100,250))
     display_text(screen, "Pot", pot, (100, 550))

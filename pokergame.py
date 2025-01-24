@@ -283,25 +283,21 @@ def AI_turn():
     print("AI turn")
     clear_text = pygame.Rect(1000, 180, 250, 60)
     pygame.draw.rect(screen, (0, 128, 0), clear_text)
-    print("cleared text")
     
     # Evaluate AI's hand
     opponent_best_hand = opponent_hand + community_cards
     hand_rank, values = get_hand_rank(opponent_best_hand)
-    
     # If there's no previous bet, AI will check (or raise if it has a very strong hand)
     if prev_bet == 0:
-        if hand_rank >= 5:  # Strong hands like Full House, Straight, Flush
+        if hand_rank >= 3:  # More than one pair
             # Raise with strong hands if no one has bet yet
             raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
             prev_bet = raise_amount
             pot += raise_amount
             opponent_money -= raise_amount
-            print(f"AI raises {raise_amount}")
             display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
         else:
             # Otherwise, AI checks with weak hands
-            print("AI checks")
             display_text(screen, "AI checks", False, (1000, 200), 50)  
     
     # If there's a previous bet, AI can call, raise, or fold based on its hand
@@ -312,27 +308,24 @@ def AI_turn():
             prev_bet = raise_amount
             pot += raise_amount
             opponent_money -= raise_amount
-            print(f"AI raises {raise_amount}")
             display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
         elif hand_rank >= 2:  # Decent hands
         #else: #AI folding is currently commented out for debugging#
             # Call with decent hands
             if prev_bet <= opponent_money:
                 call_amount = prev_bet
-                display_text(screen, "AI calls", False, (1000, 200), 50)
             else:
                 call_amount = opponent_money
-            prev_bet = call_amount
             pot += call_amount
             opponent_money -= call_amount
-            print(f"AI calls {call_amount}")
+            display_text(screen, f"AI calls {call_amount}", False, (1000, 200), 50)
         else:  # Weak hand, AI will fold
             print("AI folds")
             display_text(screen, "AI folds", False, (1000, 200), 50)
             pygame.display.flip()
             AI_lost = True
             phase = "showdown"
-            pygame.time.wait(3000)
+            pygame.time.wait(2500)
             Showdown()
         #    return  # End the turn, AI folds
 
@@ -506,16 +499,9 @@ def Showdown():
 
 def ResolveGame():
     global opponent_money, player_money, pot, revealing_cards, playerturn_running, player_lost, AI_lost
-    if prev_bet > 0:
-        if in_raise:
-            delete_button(screen, confirm_button)
-            delete_button(screen, cancel_button)
-        else:
-            try:
-                delete_button(screen, call_button)
-            except NameError:
-                pass
-    else:
+    try:
+        delete_button(screen, call_button)
+    except NameError:
         delete_button(screen, check_button)
     delete_button(screen, fold_button)
     delete_button(screen, raise_button)
@@ -533,6 +519,8 @@ def ResolveGame():
     while revealing_cards:
         if player_lost:
             display_text(screen, "Opponent wins!", False, (1000, 200), 50)
+        elif AI_lost:
+            display_text(screen, "Player wins!", False, (1000, 200), 50)
         else:
             display_text(screen, compare_hands(player_hand + community_cards, opponent_hand + community_cards), False, (1000, 200), 50)
         if player_money > 0 and opponent_money > 0:
@@ -540,6 +528,10 @@ def ResolveGame():
             next_round_button.draw(screen)
         else:
             display_text(screen, "Game Over", False, (1000, 800), 50)
+            if player_money == 0:
+                display_text(screen, "You lost", False, (1000, 600), 50)
+            else:
+                display_text(screen, "You won", False, (1000, 600), 50)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -653,25 +645,12 @@ def compare_hands(hand1, hand2):
         else:
             player_win+=1
             return "It's a tie!"
-
-def determine_winner():
-    global oppenent_win,player_win,pot,player_money,opponent_money
-    player_best_hand = player_hand + community_cards
-    opponent_best_hand = opponent_hand + community_cards
-    winner = compare_hands(player_best_hand, opponent_best_hand)
-    print(winner)
-    if player_win==1:
-        player_money+=pot
-        player_win=0
-        print(player_money)
-    else:
-        opponent_money+=pot
-        oppenent_win=0
         
 def start_next_round():
-    global playerturn_running, revealing_cards
+    global playerturn_running, revealing_cards, bet_turn
     playerturn_running = False
     revealing_cards = False
+    bet_turn = 1
     screen.fill((0, 128, 0))
     print("Starting next round...")
     play_round()

@@ -294,7 +294,7 @@ def AI_turn():
     hand_rank, values = get_hand_rank(opponent_best_hand)
     # If there's no previous bet, AI will check (or raise if it has a very strong hand)
     if prev_bet == 0:
-        if hand_rank >= 3:  # More than one pair
+        if hand_rank >= 4:  # More than one pair
             # Raise with strong hands if no one has bet yet
             raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
             prev_bet = raise_amount

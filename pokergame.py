@@ -232,9 +232,10 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running, playerturn_running
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running, playerturn_running,prev_bet
     # display buttons#
     print("Player has: $" + str(player_money))
+    print("Previous bet is",prev_bet)
     if in_raise:
         delete_button(screen,confirm_button)
         delete_button(screen,cancel_button)
@@ -247,8 +248,13 @@ def player_turn():
         raise_button = Button(1075, 700, 100, 50, "Raise", Raise)
         buttons.append(raise_button)
     if prev_bet > 0:
+        delete_button(screen,check_button)
         call_button = Button(950, 700, 100, 50, "Call", Call)
+        print("call button called")
+        buttons=[call_button]
         buttons.append(call_button)
+        pygame.display.flip()
+
     else:
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
@@ -302,18 +308,20 @@ def AI_turn():
     
     # If there's a previous bet, AI can call, raise, or fold based on its hand
     elif prev_bet > 0:
-        if hand_rank >= 5:  # Strong hands (Full House, Straight, Flush, etc.)
+        #if hand_rank >= 5:  # Strong hands (Full House, Straight, Flush, etc.)
             # Raise if the hand is strong
-            raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
-            prev_bet = raise_amount
-            pot += raise_amount
-            opponent_money -= raise_amount
-            display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
-        elif hand_rank >= 2:  # Decent hands
+            #raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
+            #prev_bet = raise_amount
+            #print("This is the", prev_bet, "being assughned")
+            #pot += raise_amount
+            #opponent_money -= raise_amount
+            #display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
+        if hand_rank >= 2:  # Decent hands
         #else: #AI folding is currently commented out for debugging#
             # Call with decent hands
             if prev_bet <= opponent_money:
                 call_amount = prev_bet
+
             else:
                 call_amount = opponent_money
             pot += call_amount

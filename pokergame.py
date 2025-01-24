@@ -251,7 +251,6 @@ def player_turn():
         delete_button(screen,check_button)
         call_button = Button(950, 700, 100, 50, "Call", Call)
         print("call button called")
-        buttons=[call_button]
         buttons.append(call_button)
         pygame.display.flip()
 

@@ -13,10 +13,6 @@ screen_width = 1400
 screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
-# Chip Creation #
-class Pile:
-    def __init__(self, size):
-        self.size = size
         
 def display_text(screen, text, value, coordinates, font_size=24, color=(255, 255, 255)):
     """
@@ -33,7 +29,10 @@ def display_text(screen, text, value, coordinates, font_size=24, color=(255, 255
     font = pygame.font.Font(None, font_size)
     
     # Combine the text and value
-    full_text = f"{text}: {value}"
+    if value != False:
+        full_text = f"{text}: {value}"
+    else:
+        full_text = f"{text}"
     # Render the text
     text_surface = font.render(full_text, True, color)
     # Get the rectangle of the text surface
@@ -71,11 +70,6 @@ def load_card_images(cards):
             card.image = pygame.image.load(card_image_file)
         except pygame.error as e:
             print(f"Error loading image {card_image_file}: {e}")
-
-def load_pile_images(size):
-    pile_images = []
-    for i in range(math.ceil(size/100)):
-        pile_images.append(f"pile-of-chips.webp")
 
 # Function to make deck #
 def create_deck():
@@ -137,20 +131,30 @@ def display_hand(hand):
     for index, card in enumerate(hand):
         display_card(card, index, len(hand), hand)
 
+def display_chips(pile, x, y):
+    chips = pygame.image.load(f"pile-of-chips.webp")
+    original_width, original_height = chips.get_size()
+    chips_width = original_width * 0.15
+    chips_height = original_height * 0.15
+    scaled_image = pygame.transform.scale(chips, (chips_width, chips_height))
+    rows = 1
+    while (rows * (rows + 1)) // 2 * 100 <= pile:
+        rows += 1
+    rows -= 1
 
-# Creating the deck and images and empty player hand #
-deck = create_deck()
-load_card_images(deck)
-random.shuffle(deck)
-player_hand = []
-opponent_hand = []
-community_cards = []
-initial_money = 1000
-pot = 0
-player_money = initial_money
-opponent_money = initial_money
-player_chips = Pile(player_money)
-opponent_chips = Pile(opponent_money)
+    # Draw pyramid
+    current_row = rows
+    chips_placed = 0
+    while current_row > 0:
+        for i in range(current_row + 1):
+            if chips_placed < math.ceil(pile / 100):
+                offset_x = x + ((current_row-1) * chips_width / 4) - (i * (chips_width/2))
+                offset_y = y - ((rows-current_row) * (chips_height/2))
+                screen.blit(scaled_image, (offset_x, offset_y))
+                chips_placed += 1
+            else:
+                break
+        current_row -= 1
 
 class Button:
     def __init__(self, x, y, width, height, text, action=None):
@@ -175,7 +179,8 @@ class Button:
             self.action()
 def delete_button(screen, button):
     global buttons
-    buttons.remove(button)
+    if button in buttons:
+        buttons.remove(button)
     button.active = False
     pygame.draw.rect(screen, (0, 128, 0), button.rect)
     pygame.display.update(button.rect)
@@ -200,30 +205,24 @@ def delete_slider(x,y,width,height): #delete slider with given coords of slider(
 
 playercount = 2 # can be changed later if we want to add more players without needing to code in #
 bet_turn = 1
-def Checkkallin():
-    pass
 def bet_phase():
     global prev_bet, last_player, bet_turn, round_complete, in_raise
     # 0 is neutral, 1 is player, 2 is AI #
     prev_bet = 0
     in_raise = False
     last_player = playercount
-    round_complete = False    
-    while not round_complete:
+    round_complete = False
+    while not round_complete and not player_lost and not AI_lost:
+        render_chips()
         if bet_turn == 1:
             player_turn()
             print("player turn")
-            print("Bet turn number")
-            print("ai " + ", bet_turn")
-            print("after playerturn bet turn is", bet_turn)
         else:
             # AI turn to be added #
             AI_turn()
             print("ai turn")
             
             print("past both turns")
-            print(bet_turn)
-            print(last_player)
             if bet_turn != last_player:
                 bet_turn = (bet_turn % playercount) + 1
             else:
@@ -233,7 +232,7 @@ def bet_phase():
     bet_turn = 1
 
 def player_turn():
-    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running
+    global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running, playerturn_running
     # display buttons#
     print("Player has: $" + str(player_money))
     if in_raise:
@@ -270,7 +269,7 @@ def player_turn():
                             ConfirmRaise()
                             in_raise=False
                             playerturn_running=True
-                        else: 
+                        else:
                             print("past raise checker")
                             playerturn_running=False
             elif event.type == pygame.QUIT:
@@ -279,9 +278,12 @@ def player_turn():
                 quit()
         
 def AI_turn():
-    global bet_turn, last_player, opponent_money, prev_bet, pot
+    global bet_turn, last_player, opponent_money, prev_bet, pot, AI_lost, clear_text, phase
 
     print("AI turn")
+    clear_text = pygame.Rect(1000, 180, 250, 60)
+    pygame.draw.rect(screen, (0, 128, 0), clear_text)
+    print("cleared text")
     
     # Evaluate AI's hand
     opponent_best_hand = opponent_hand + community_cards
@@ -296,9 +298,11 @@ def AI_turn():
             pot += raise_amount
             opponent_money -= raise_amount
             print(f"AI raises {raise_amount}")
+            display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
         else:
             # Otherwise, AI checks with weak hands
             print("AI checks")
+            display_text(screen, "AI checks", False, (1000, 200), 50)  
     
     # If there's a previous bet, AI can call, raise, or fold based on its hand
     elif prev_bet > 0:
@@ -309,16 +313,27 @@ def AI_turn():
             pot += raise_amount
             opponent_money -= raise_amount
             print(f"AI raises {raise_amount}")
-        #elif hand_rank >= 4:  # Decent hands like Three of a Kind, Two Pair
-        else: #AI folding is currently commented out for debugging#
+            display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
+        elif hand_rank >= 2:  # Decent hands
+        #else: #AI folding is currently commented out for debugging#
             # Call with decent hands
-            call_amount = prev_bet
+            if prev_bet <= opponent_money:
+                call_amount = prev_bet
+                display_text(screen, "AI calls", False, (1000, 200), 50)
+            else:
+                call_amount = opponent_money
             prev_bet = call_amount
             pot += call_amount
             opponent_money -= call_amount
             print(f"AI calls {call_amount}")
-        #else:  # Weak hand, AI will fold
-        #    print("AI folds")
+        else:  # Weak hand, AI will fold
+            print("AI folds")
+            display_text(screen, "AI folds", False, (1000, 200), 50)
+            pygame.display.flip()
+            AI_lost = True
+            phase = "showdown"
+            pygame.time.wait(3000)
+            Showdown()
         #    return  # End the turn, AI folds
 
     # Update bet turn to player (or to the next player in the game)
@@ -330,8 +345,19 @@ def check_betting_round_complete():
         round_complete = True
         move_to_next_phase()
 
+def render_chips():
+    clear_chips = pygame.Rect(0, 0, 350, 1500)
+    pygame.draw.rect(screen, (0,128,128), clear_chips)
+    display_text(screen, "Player Chips", player_money, (100,800))
+    display_text(screen, "Opponents Chips", opponent_money, (100,250))
+    display_text(screen, "Pot", pot, (100, 550))
+    display_chips(player_money, 180, 700)
+    display_chips(opponent_money, 180, 150)
+    display_chips(pot, 180, 450)
+
 def move_to_next_phase():
     global phase, bet_turn, player_lost
+    render_chips()
     if phase == "pre-flop":
         Flop()
         phase = "post-flop"
@@ -352,6 +378,7 @@ def move_to_next_phase():
             phase = "river"
             bet_turn = 1
     print(phase)
+    pygame.display.flip()
 
 def Check():
     global bet_turn, pot
@@ -444,10 +471,11 @@ def ConfirmRaise():
     print(pot)
 
 def Fold():
-    global player_lost
+    global player_lost, phase
     print("Fold")
     player_lost = True
-    ResolveGame()
+    phase = "showdown"
+    Showdown()
 
 def Flop():
     global bet_turn
@@ -472,16 +500,60 @@ def Showdown():
     # Win conditions #
     revealing_cards = True
     display_hand(opponent_hand)
-    print(compare_hands(player_hand + community_cards, opponent_hand + community_cards))
+    ResolveGame()
+
     #checkwin()
 
 def ResolveGame():
-    global opponent_money, player_money, pot
+    global opponent_money, player_money, pot, revealing_cards, playerturn_running, player_lost, AI_lost
+    if prev_bet > 0:
+        if in_raise:
+            delete_button(screen, confirm_button)
+            delete_button(screen, cancel_button)
+        else:
+            try:
+                delete_button(screen, call_button)
+            except NameError:
+                pass
+    else:
+        delete_button(screen, check_button)
+    delete_button(screen, fold_button)
+    delete_button(screen, raise_button)
+    try:
+        pygame.draw.rect(screen, (0, 128, 0), clear_text)
+    except NameError:
+        pass
+    if not AI_lost and compare_hands(player_hand+ community_cards, opponent_hand + community_cards) == "Opponent wins!":
+        player_lost = True
     if player_lost:
         opponent_money += pot
     else:
         player_money += pot
     pot = 0
+    while revealing_cards:
+        if player_lost:
+            display_text(screen, "Opponent wins!", False, (1000, 200), 50)
+        else:
+            display_text(screen, compare_hands(player_hand + community_cards, opponent_hand + community_cards), False, (1000, 200), 50)
+        if player_money > 0 and opponent_money > 0:
+            next_round_button = Button(1075, 700, 200, 50, "Next Round", start_next_round)
+            next_round_button.draw(screen)
+        else:
+            display_text(screen, "Game Over", False, (1000, 800), 50)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                print("mousebuttondown")
+                mouse_pos = pygame.mouse.get_pos()
+                if next_round_button.is_hovered(mouse_pos):
+                    next_round_button.handle_click(mouse_pos)
+                    print("Button")
+                    if revealing_cards:
+                        playerturn_running = False
+                        revealing_cards = False
+        pygame.display.flip()
 
 oppenent_win=0
 player_win=0
@@ -596,32 +668,55 @@ def determine_winner():
         opponent_money+=pot
         oppenent_win=0
         
+def start_next_round():
+    global playerturn_running, revealing_cards
+    playerturn_running = False
+    revealing_cards = False
+    screen.fill((0, 128, 0))
+    print("Starting next round...")
+    play_round()
 
 # Main Game Loop #
 running = True
-phase = "pre-flop"
-revealing_cards = False
-all_in = False
-draw_hand(2, deck, player_hand)
-draw_hand(2, deck, opponent_hand)
-while running:
+# Creating the pot#
+initial_money = 1000
+pot = 0
+player_money = initial_money
+opponent_money = initial_money
+def play_round():
+    global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    deck = create_deck()
+    load_card_images(deck)
+    random.shuffle(deck)
+    player_hand = []
+    opponent_hand = []
+    community_cards = []
+    print("round starting...")
     screen.fill((0, 128, 0))
-    display_hand(player_hand)
-    display_hand(opponent_hand) 
-    display_hand(community_cards)
-    display_text(screen, "Player Chips", player_money, (200,800))
-    display_text(screen, "Opponents Chips", opponent_money, (200,250))
-    display_text(screen, "Pot", pot, (200, 550))
-    pygame.display.flip()
-    for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                pygame.quit()
-    while phase != "showdown":
-        bet_phase()
-        move_to_next_phase()
+    phase = "pre-flop"
+    revealing_cards = False
+    all_in = False
+    player_lost = False
+    AI_lost = False
+    draw_hand(2, deck, player_hand)
+    draw_hand(2, deck, opponent_hand)
+    while running:
+        screen.fill((0, 128, 0))
+        display_hand(player_hand)
+        display_hand(opponent_hand)
+        display_hand(community_cards)
+        render_chips()
         pygame.display.flip()
-    pygame.display.flip()
-    pygame.time.Clock().tick(60)
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+        while phase != "showdown":
+            bet_phase()
+            move_to_next_phase()
+        pygame.display.flip()
+        pygame.time.Clock().tick(60)
+
+play_round()
 
 pygame.quit()

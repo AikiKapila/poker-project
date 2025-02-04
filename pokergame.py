@@ -223,13 +223,16 @@ def bet_phase():
             print("ai turn")
             
             print("past both turns")
-            if bet_turn != last_player:
+
+            #else:
+                #bet_turn = (bet_turn + 1) % playercount
+            if bet_turn < last_player + 1:
                 bet_turn = (bet_turn % playercount) + 1
             else:
                 round_complete = True
 
     print("Betting round complete")
-    bet_turn = 1
+    #bet_turn = 1
 
 def player_turn():
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running, playerturn_running,prev_bet
@@ -302,9 +305,10 @@ def AI_turn():
             pot += raise_amount
             opponent_money -= raise_amount
             display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
+            last_player = bet_turn - 1
         else:
             # Otherwise, AI checks with weak hands
-            display_text(screen, "AI checks", False, (1000, 200), 50)  
+            display_text(screen, "AI checks", False, (1000, 200), 50)
     
     # If there's a previous bet, AI can call, raise, or fold based on its hand
     elif prev_bet > 0:
@@ -312,7 +316,7 @@ def AI_turn():
             # Raise if the hand is strong
             #raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
             #prev_bet = raise_amount
-            #print("This is the", prev_bet, "being assughned")
+            #print("This is the", prev_bet, "being assigned")
             #pot += raise_amount
             #opponent_money -= raise_amount
             #display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
@@ -384,14 +388,14 @@ def move_to_next_phase():
 def Check():
     global bet_turn, pot
     pot += 0
-    bet_turn -= 1
+    #bet_turn -= 1
     print("Check")
 
 def Call():
     global pot, player_money, bet_turn
     pot += prev_bet
     player_money -= prev_bet
-    bet_turn -= 1
+    #bet_turn -= 1
     print(player_money)
     print(pot)
     print("Call")

@@ -288,14 +288,6 @@ def AI_turn(action, bet_amount):
         opponent_money -= raise_amount
         last_player -= 1
         display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
-    
-    elif action == "bet":
-        bet_value = min(bet_amount, opponent_money)  # Ensure AI doesn't bet more than it has
-        prev_bet = bet_value
-        pot += bet_value
-        opponent_money -= bet_value
-        display_text(screen, f"AI bets {bet_value}", False, (1000, 200), 50)
-    
     elif action == "check":
         display_text(screen, "AI checks", False, (1000, 200), 50)
     

@@ -5,6 +5,7 @@ import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
+from Ai import *
 
 
 # Pygame Set Up #
@@ -273,59 +274,49 @@ def player_turn():
                 pygame.quit()
                 quit()
         
-def AI_turn():
+def AI_turn(action, bet_amount):
     global bet_turn, last_player, opponent_money, prev_bet, pot, AI_lost, clear_text, phase
 
     print("AI turn")
     clear_text = pygame.Rect(1000, 180, 250, 60)
     pygame.draw.rect(screen, (0, 128, 0), clear_text)
     
-    # Evaluate AI's hand
-    opponent_best_hand = opponent_hand + community_cards
-    hand_rank, values = get_hand_rank(opponent_best_hand)
-    # If there's no previous bet, AI will check (or raise if it has a very strong hand)
-    if prev_bet == 0:
-        if hand_rank >= 4:  # More than one pair
-            # Raise with strong hands if no one has bet yet
-            raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
-            prev_bet = raise_amount
-            pot += raise_amount
-            opponent_money -= raise_amount
-            last_player -= 1
-            display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
-        else:
-            # Otherwise, AI checks with weak hands
-            display_text(screen, "AI checks", False, (1000, 200), 50)
+    if action == "raise":
+        raise_amount = min(bet_amount, opponent_money)  # Ensure AI doesn't bet more than it has
+        prev_bet = raise_amount
+        pot += raise_amount
+        opponent_money -= raise_amount
+        last_player -= 1
+        display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
+    
+    elif action == "bet":
+        bet_value = min(bet_amount, opponent_money)  # Ensure AI doesn't bet more than it has
+        prev_bet = bet_value
+        pot += bet_value
+        opponent_money -= bet_value
+        display_text(screen, f"AI bets {bet_value}", False, (1000, 200), 50)
+    
+    elif action == "check":
+        display_text(screen, "AI checks", False, (1000, 200), 50)
+    
+    elif action == "call":
+        call_amount = min(prev_bet, opponent_money)  # Call the previous bet
+        pot += call_amount
+        opponent_money -= call_amount
+        display_text(screen, f"AI calls {call_amount}", False, (1000, 200), 50)
+    
+    elif action == "fold":
+        print("AI folds")
+        display_text(screen, "AI folds", False, (1000, 200), 50)
+        pygame.display.flip()
+        AI_lost = True
+        phase = "showdown"
+        pygame.time.wait(2500)
+        Showdown()
+    
+    else:
+        print("Invalid action specified")
 
-    # If there's a previous bet, AI can call, raise, or fold based on its hand
-    elif prev_bet > 0:
-        #if hand_rank >= 5:  # Strong hands (Full House, Straight, Flush, etc.)
-            # Raise if the hand is strong
-            #raise_amount = min(opponent_money // 2, opponent_money)  # Raise with 50% of available AI's chips
-            #prev_bet = raise_amount
-            #print("This is the", prev_bet, "being assughned")
-            #pot += raise_amount
-            #opponent_money -= raise_amount
-            #display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
-        if hand_rank >= 2:  # Decent hands
-        #else: #AI folding is currently commented out for debugging#
-            # Call with decent hands
-            if prev_bet <= opponent_money:
-                call_amount = prev_bet
-            else:
-                call_amount = opponent_money
-            pot += call_amount
-            opponent_money -= call_amount
-            display_text(screen, f"AI calls {call_amount}", False, (1000, 200), 50)
-        else:  # Weak hand, AI will fold
-            print("AI folds")
-            display_text(screen, "AI folds", False, (1000, 200), 50)
-            pygame.display.flip()
-            AI_lost = True
-            phase = "showdown"
-            pygame.time.wait(2500)
-            Showdown()
-        #    return  # End the turn, AI folds
 
 def render_chips():
     clear_chips = pygame.Rect(0, 0, 350, 1500)

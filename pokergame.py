@@ -221,15 +221,13 @@ def bet_phase():
             # AI turn to be added #
             AI_turn()
             print("ai turn")
-            
-            print("past both turns")
-            if bet_turn != last_player:
-                bet_turn = (bet_turn % playercount) + 1
-            else:
-                round_complete = True
+        print("past both turns")
+        if bet_turn != last_player:
+            bet_turn = (bet_turn % playercount) + 1
+        else:
+            round_complete = True
 
     print("Betting round complete")
-    bet_turn = 1
 
 def player_turn():
     global buttons, raise_button, fold_button, call_button, check_button, cancel_button, confirm_button,in_raise,bet_turn, all_in, running, playerturn_running,prev_bet
@@ -253,7 +251,6 @@ def player_turn():
         print("call button called")
         buttons.append(call_button)
         pygame.display.flip()
-
     else:
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
@@ -270,13 +267,7 @@ def player_turn():
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
                         print("Button")
-                        if in_raise:
-                            ConfirmRaise()
-                            in_raise=False
-                            playerturn_running=True
-                        else:
-                            print("past raise checker")
-                            playerturn_running=False
+                        playerturn_running=False
             elif event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
@@ -300,11 +291,12 @@ def AI_turn():
             prev_bet = raise_amount
             pot += raise_amount
             opponent_money -= raise_amount
+            last_player -= 1
             display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
         else:
             # Otherwise, AI checks with weak hands
-            display_text(screen, "AI checks", False, (1000, 200), 50)  
-    
+            display_text(screen, "AI checks", False, (1000, 200), 50)
+
     # If there's a previous bet, AI can call, raise, or fold based on its hand
     elif prev_bet > 0:
         #if hand_rank >= 5:  # Strong hands (Full House, Straight, Flush, etc.)
@@ -320,7 +312,6 @@ def AI_turn():
             # Call with decent hands
             if prev_bet <= opponent_money:
                 call_amount = prev_bet
-
             else:
                 call_amount = opponent_money
             pot += call_amount
@@ -335,15 +326,6 @@ def AI_turn():
             pygame.time.wait(2500)
             Showdown()
         #    return  # End the turn, AI folds
-
-    # Update bet turn to player (or to the next player in the game)
-    bet_turn = last_player
- 
-def check_betting_round_complete():
-    global bet_turn, last_player, round_complete
-    if bet_turn == last_player:  # All players have acted
-        round_complete = True
-        move_to_next_phase()
 
 def render_chips():
     clear_chips = pygame.Rect(0, 0, 350, 1500)
@@ -383,14 +365,14 @@ def move_to_next_phase():
 def Check():
     global bet_turn, pot
     pot += 0
-    bet_turn -= 1
     print("Check")
+    if bet_turn == last_player:
+        move_to_next_phase()
 
 def Call():
     global pot, player_money, bet_turn
     pot += prev_bet
     player_money -= prev_bet
-    bet_turn -= 1
     print(player_money)
     print(pot)
     print("Call")
@@ -463,7 +445,6 @@ def ConfirmRaise():
     global bet_check, in_raise, bet_turn, all_in
     in_raise = False
     bet_check+=1
-    bet_turn += 1
     delete_slider(973, 575, 300, 50)
     delete_slider(1090, 645, 80, 50)
     delete_button(screen,confirm_button)

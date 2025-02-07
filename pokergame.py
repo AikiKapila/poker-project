@@ -610,12 +610,13 @@ def compare_hands(hand1, hand2):
     else:
         # If same rank, compare by card values
         if values1 > values2:
+            player_win += 1
             return "Player wins!"
         elif values2 > values1:
-            oppenent_win+=1
+            oppenent_win += 1
             return "Opponent wins!"
         else:
-            player_win+=1
+            player_win += 1
             return "It's a tie!"
         
 def start_next_round():

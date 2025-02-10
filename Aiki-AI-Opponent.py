@@ -39,7 +39,5 @@ def monte_carlo_simulation(ai_hand, community_cards, num_opponents=3, num_simula
     return wins / num_simulations
 
 def remove_known_cards(deck, known_cards):
-    for card in known_cards:
-        if card in deck:
-            deck.remove(card)
-    return deck
+    remaining_deck = set(deck) - set(known_cards)
+    return list(remaining_deck)

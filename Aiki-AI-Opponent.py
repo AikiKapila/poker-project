@@ -1,6 +1,21 @@
 import random
-
 from pokergame import create_deck, draw_card, draw_hand, get_hand_rank
+
+class BayesianOpponentModel:
+    def __init__(self, name):
+        self.name = name
+        self.history = {"fold": 0, "check": 0, "call": 0, "raise": 0}
+
+        #Opponent profiling
+        self.hands_seen_preflop = 0
+        self.hands_played_preflop = 0
+        
+        self.tightness = 0.5 #0 = Loose, 1 = Tight
+        self.aggression = 0.5 #0 = Passive, 1 = Aggressive
+        self.bluff_freq = 0.5 #0 = Honest, 1 = Frequent Bluffer
+    
+    def update_playstyle(self):
+        pass
 
 def monte_carlo_simulation(ai_hand, community_cards, num_opponents=3, num_simulations=10000):
     wins = 0
@@ -41,3 +56,4 @@ def monte_carlo_simulation(ai_hand, community_cards, num_opponents=3, num_simula
 def remove_known_cards(deck, known_cards):
     remaining_deck = set(deck) - set(known_cards)
     return list(remaining_deck)
+

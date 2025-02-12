@@ -5,7 +5,7 @@ import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
-from Ai import *
+from aicomp_beta import *
 
 
 # Pygame Set Up #

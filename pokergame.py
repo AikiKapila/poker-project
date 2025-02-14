@@ -5,7 +5,7 @@ import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
-from AikiAIOpponent import BayesianOpponentModel
+from AikiAIOpponent import BayesianOpponentModel, monte_carlo_simulation
 
 
 # Pygame Set Up #
@@ -274,13 +274,14 @@ def player_turn():
                 pygame.quit()
                 quit()
         
-def AI_turn(action, bet_amount):
+def AI_turn():
     global bet_turn, last_player, opponent_money, prev_bet, pot, AI_lost, clear_text, phase
-
     print("AI turn")
     clear_text = pygame.Rect(1000, 180, 250, 60)
     pygame.draw.rect(screen, (0, 128, 0), clear_text)
-    
+
+    action, bet_amount = make_decision()
+
     if action == "raise":
         raise_amount = min(bet_amount, opponent_money)  # Ensure AI doesn't bet more than it has
         prev_bet = raise_amount
@@ -309,6 +310,9 @@ def AI_turn(action, bet_amount):
     
     else:
         print("Invalid action specified")
+
+def aiki_AI_make_decision():
+    win_probability = monte_carlo_simulation()
 
 
 def render_chips():
@@ -650,7 +654,9 @@ def play_round():
     load_card_images(deck)
     random.shuffle(deck)
     player_hand = []
-    opponent_hand = []
+    aiki_AI_hand = []
+    keoki_AI_hand = []
+    ellis_AI_hand = []
     community_cards = []
     print("round starting...")
     screen.fill((0, 128, 0))

@@ -1,5 +1,5 @@
 import random
-from pokergame import create_deck, draw_card, draw_hand, get_hand_rank, get_card_values, phase
+from pokergame import create_deck, draw_card, draw_hand, get_hand_rank, get_card_values
 
 class BayesianOpponentModel:
     def __init__(self, name):
@@ -11,12 +11,13 @@ class BayesianOpponentModel:
         #Opponent profiling
         self.total_preflop = 0
         self.folds_preflop = 0
+        self.total_bet_amount = 0
         
         self.tightness = 0.5 #0 = Loose, 1 = Tight
         self.aggression = 0.5 #0 = Passive, 1 = Aggressive
         self.bluff_freq = 0.5 #0 = Honest, 1 = Frequent Bluffer
-    
-    def track_action(self, action):
+
+    def track_action(self, action, phase):
         if action in self.history:
             self.history[action] += 1
             self.current_hand_actions[action] += 1
@@ -42,8 +43,8 @@ class BayesianOpponentModel:
                     bluff_factor -= 0.03
                 case _:
                     bluff_factor -= 0.05
-            for card in hand:
-                match personal_hand_values[card]:
+            for value in personal_hand_values:
+                match value:
                     case x if x <= 10:
                         bluff_factor += round(0.1/x, 2)
                     case x if x > 10:
@@ -97,4 +98,3 @@ def monte_carlo_simulation(ai_hand, community_cards, num_opponents=3, num_simula
 def remove_known_cards(deck, known_cards):
     remaining_deck = set(deck) - set(known_cards)
     return list(remaining_deck)
-

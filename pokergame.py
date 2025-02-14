@@ -15,7 +15,6 @@ screen_width = 1400
 screen_height = 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Poker Game')
-        
 
 
 class Card:
@@ -279,28 +278,31 @@ def delete_slider(x,y,width,height): #delete slider with given coords of slider(
 # Betting #
 
 playercount = 2 # can be changed later if we want to add more players without needing to code in #
-bet_turn = 1
 def bet_phase():
     global prev_bet, last_player, bet_turn, round_complete, in_raise
     # 0 is neutral, 1 is player, 2 is AI #
     prev_bet = 0
     in_raise = False
-    last_player = playercount
+    last_player = playercount  # Initialize last_player to the number of players
     round_complete = False
+
     while not round_complete and not player_lost and not AI_lost:
         render_chips()
+
+        print(f"bet_turn: {bet_turn}, last_player: {last_player}, round_complete: {round_complete}")
+
         if bet_turn == 1:
             player_turn()
-            print("player turn")
+            print("Player turn")
         else:
-            # AI turn to be added #
             AI_turn()
-            print("ai turn")
-        print("past both turns")
-        if bet_turn != last_player:
-            bet_turn = (bet_turn % playercount) + 1
-        else:
+            print("AI turn")
+
+        # Check if the betting round is complete
+        if bet_turn == last_player:
             round_complete = True
+        else:
+            bet_turn = (bet_turn % playercount) + 1  # Move to the next player
 
     print("Betting round complete")
 
@@ -353,7 +355,7 @@ def AI_turn():
     global pot, opponent_money, bet_turn, prev_bet, phase, AI_lost
 
     # Get AI's decision
-    action, bet_amount = eai_decision(opponent_hand, community_cards, prev_bet, opponent_money)
+    action, bet_amount = eai_decision(opponent_hand, community_cards, prev_bet, opponent_money, deck)
     clear_text = pygame.Rect(1000, 180, 250, 60)
     pygame.draw.rect(screen, (0, 128, 0), clear_text)
     
@@ -680,7 +682,7 @@ pot = 0
 player_money = initial_money
 opponent_money = initial_money
 def play_round():
-    global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost, bet_turn
     deck = create_deck()
     load_card_images(deck)
     random.shuffle(deck)
@@ -694,6 +696,7 @@ def play_round():
     all_in = False
     player_lost = False
     AI_lost = False
+    bet_turn = 1  # Reset bet_turn to player's turn
     draw_hand(2, deck, player_hand)
     draw_hand(2, deck, opponent_hand)
     while running:
@@ -712,7 +715,6 @@ def play_round():
             move_to_next_phase()
         pygame.display.flip()
         pygame.time.Clock().tick(60)
-
 play_round()
 
 pygame.quit()

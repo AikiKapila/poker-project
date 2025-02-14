@@ -95,7 +95,7 @@ def display_card(card, index, total_cards, hand):
     card_image = card.image
     if hand == player_hand:
         hand_pos = 9
-    elif hand == opponent_hand:
+    elif hand == aiki_AI_hand:
         hand_pos = 3
         if not revealing_cards:
             card_image = pygame.image.load(f"card-back.jpg")
@@ -464,7 +464,9 @@ def Showdown():
     global revealing_cards
     # Win conditions #
     revealing_cards = True
-    display_hand(opponent_hand)
+    display_hand(aiki_AI_hand)
+    display_hand(ellis_AI_hand)
+    display_hand(keoki_AI_hand)
     ResolveGame()
 
     #checkwin()
@@ -635,12 +637,14 @@ pot = 0
 player_money = initial_money
 opponent_money = initial_money
 def play_round():
-    global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    global player_hand, aiki_AI_hand, ellis_AI_hand, keoki_AI_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
     deck = create_deck()
     load_card_images(deck)
     random.shuffle(deck)
     player_hand = []
-    opponent_hand = []
+    aiki_AI_hand = []
+    ellis_AI_hand = []
+    keoki_AI_hand = []
     community_cards = []
     print("round starting...")
     screen.fill((0, 128, 0))
@@ -650,11 +654,15 @@ def play_round():
     player_lost = False
     AI_lost = False
     draw_hand(2, deck, player_hand)
-    draw_hand(2, deck, opponent_hand)
+    draw_hand(2, deck, aiki_AI_hand)
+    draw_hand(2, deck, ellis_AI_hand)
+    draw_hand(2, deck, keoki_AI_hand)
     while running:
         screen.fill((0, 128, 0))
         display_hand(player_hand)
-        display_hand(opponent_hand)
+        display_hand(aiki_AI_hand)
+        display_hand(ellis_AI_hand)
+        display_hand(keoki_AI_hand)
         display_hand(community_cards)
         render_chips()
         pygame.display.flip()

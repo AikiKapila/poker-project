@@ -5,7 +5,7 @@ import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from collections import Counter
-from Ai import *
+from AikiAIOpponent import BayesianOpponentModel
 
 
 # Pygame Set Up #
@@ -466,6 +466,9 @@ def Showdown():
     revealing_cards = True
     display_hand(opponent_hand)
     ResolveGame()
+    for opponent in opponent_list:
+        if opponent.current_hand_actions["fold"] == 0:
+            opponent.analyze_showdown()
 
     #checkwin()
 
@@ -522,6 +525,11 @@ def ResolveGame():
 oppenent_win=0
 player_win=0
 
+def initialize_opponent_model():
+    global opponent_list
+    opponent_names = player_names.copy()
+    opponent_names.remove("AikiAI")
+    opponent_list = [BayesianOpponentModel(opponent) for opponent in opponent_names]
 
 # Hand evaluation functions
 def get_card_values(cards):
@@ -635,6 +643,7 @@ initial_money = 1000
 pot = 0
 player_money = initial_money
 opponent_money = initial_money
+player_names = ["player", "AikiAI", "KeokiAI", "EllisAI"]
 def play_round():
     global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
     deck = create_deck()

@@ -84,7 +84,42 @@ def draw_card(deck, hand):
         deck.pop(0)
     else:
         return None  # Return None if the deck is empty
+def rotate_image(image,angle,position):#function to rotate image for more player format
+    """Rotate an image while keeping its center.
+    
+    Args:
+        image (pygame.Surface): The image to rotate.
+        angle (float): The angle in degrees to rotate the image.
+        2 (tuple): The (x, y) coordinates of the center position.
 
+    Returns:
+        pygame.Surface: The rotated image.
+        tuple: The new top-left position to keep the image centered.
+    """
+  
+    rotated_image = pygame.transform.rotate(image, angle)
+    new_rect = rotated_image.get_rect(center=position)
+    return rotated_image, new_rect.topleft
+def create_player_card_list():#creates list of number of players for refrence in check_player_angle
+    global playercount,player_cards
+    player_cards=[]
+    for i in range(playercount):
+        player_cards.append(i+1)
+
+def check_player_angle(): #finds the optimal angle for each players hand based on player count for card generaiton e.i: playercount=4 has player 1 at 90 degree angle player 2 at 180... and than changes image angle from that
+    global player_cards,intial_angle
+    intial_angle=360/len(player_cards)#can change degrees if you want diffrent format
+    intial_angle2=0
+    intial_angle2=intial_angle
+    for i in range (len(player_cards)):
+        if i+1==player_cards[i]:
+            rotate_image("card-back.jpg",intial_angle2,add coordinates here)
+            intial_angle2=intial_angle+intial_angle2
+
+            
+
+
+            
 def draw_hand(draw_num, deck, hand):
     for i in range(draw_num):
         draw_card(deck, hand)
@@ -203,7 +238,7 @@ def delete_slider(x,y,width,height): #delete slider with given coords of slider(
 
 # Betting #
 
-playercount = 2 # can be changed later if we want to add more players without needing to code in #
+playercount = 3 # can be changed later if we want to add more players without needing to code in #
 bet_turn = 1
 def bet_phase():
     global prev_bet, last_player, bet_turn, round_complete, in_raise
@@ -670,6 +705,7 @@ def play_round():
     while running:
         screen.fill((0, 128, 0))
         display_hand(player_hand)
+            
         display_hand(opponent_hand)
         display_hand(community_cards)
         render_chips()

@@ -112,8 +112,7 @@ def eai_decision(opponent_hand, community_cards, prev_bet, opponent_money, deck)
     win_probability = monte_carlo_simulation(opponent_hand, community_cards, deck)
     print(f"AI hand rank: {ai_hand_rank}, win probability: {win_probability}")
     # Determine action and bet amount based on hand strength and win probability
-    action = "fold"
-    action = "check"
+    action = 'fold'
     bet_amount = 0
 
     # Adjust thresholds based on game phase
@@ -121,29 +120,29 @@ def eai_decision(opponent_hand, community_cards, prev_bet, opponent_money, deck)
     if num_community_cards == 0:  # Pre-flop
         if ai_hand_rank >= 2:  # Pair or better
             if prev_bet > 0:
-                action = "call"
+                action = 'call'
                 bet_amount = prev_bet
             else:
-                action = "raise"
+                action = 'raise'
                 bet_amount = min(opponent_money, max(50, prev_bet * 2))
         elif random.random() < 0.3:  # 30% chance to bluff pre-flop
-            action = "raise"
+            action = 'raise'
             bet_amount = min(opponent_money, max(50, prev_bet * 2))
     else:  # Post-flop
         if win_probability > 0.6:  # Strong hand
-            action = "raise"
+            action = 'raise'
             bet_amount = min(opponent_money, max(50, prev_bet * 2))
         elif win_probability > 0.4:  # Decent hand
             if prev_bet > 0:
-                action = "call"
+                action = 'call'
                 bet_amount = prev_bet
             else:
-                action = "check"
+                action = 'check'
         elif win_probability > 0.2 and random.random() > 0.3:  # Weak hand with chance
             if prev_bet > 0:
-                action = "call"
+                action = 'call'
                 bet_amount = prev_bet
             else:
-                action = "check"
+                action = 'check'
 
     return action, bet_amount

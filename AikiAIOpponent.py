@@ -3,6 +3,7 @@ from pokergame import create_deck, draw_card, draw_hand, get_hand_rank, get_card
 
 class BayesianOpponentModel:
     def __init__(self, name):
+        self.opponents = {}
         self.name = name
         self.history = {"fold": 0, "check": 0, "call": 0, "raise": 0}
         self.current_hand_actions = {"fold": 0, "check": 0, "call": 0, "raise": 0}
@@ -27,6 +28,8 @@ class BayesianOpponentModel:
                 self.folds_preflop += 1
 
     def analyze_showdown(self, hand, community_cards):
+        if hand is None or community_cards is None:
+            return
         hand_rank, final_hand_values = get_hand_rank(hand + community_cards)
         personal_hand_values = sorted(get_card_values(hand), reverse=True)
         self.showdown_hands.append((hand_rank, final_hand_values))
@@ -44,11 +47,10 @@ class BayesianOpponentModel:
                 case _:
                     bluff_factor -= 0.05
             for value in personal_hand_values:
-                match value:
-                    case x if x <= 10:
-                        bluff_factor += round(0.1/x, 2)
-                    case x if x > 10:
-                        bluff_factor -= 0.01*(x-10)
+                if value <= 10:
+                    bluff_factor += round(0.1/value, 2)
+                else:
+                    bluff_factor -= 0.01*(value-10)
             self.bluff_freq = max(min(1.0, self.bluff_freq + bluff_factor), 0.0)
 
     def update_playstyle(self):
@@ -98,3 +100,45 @@ def monte_carlo_simulation(ai_hand, community_cards, num_opponents=3, num_simula
 def remove_known_cards(deck, known_cards):
     remaining_deck = set(deck) - set(known_cards)
     return list(remaining_deck)
+
+def make_decision(hand, community_cards, opponent_model, game_state):
+    win_probability = monte_carlo_simulation(hand, community_cards)
+    opponent_profile = opponent_model.update_playstyle()
+
+    pot_size = game_state["pot"]
+    prev_bet = game_state["prev_bet"]
+    player_money = game_state["opponent_money"]
+
+    actions = {"fold": 0.0, "check": 0.0, "call": 0.0, "raise": 0.0}
+
+    # Initial decision making based on monte carlo win percentage #
+    if win_probability < 0.2:
+        actions["fold"] = 0.6
+        actions["check"] = 0.3
+        actions["call"] = 0.1
+        actions["raise"] = 0.0
+    elif win_probability < 0.4:
+        actions["fold"] = 0.3
+        actions["check"] = 0.4
+        actions["call"] = 0.2
+        actions["raise"] = 0.1
+    elif win_probability < 0.6:
+        actions["fold"] = 0.0
+        actions["check"] = 0.3
+        actions["call"] = 0.4
+        actions["raise"] = 0.3
+    else:
+        actions["fold"] = 0.0
+        actions["check"] = 0.1
+        actions["call"] = 0.3
+        actions["raise"] = 0.6
+    
+    # Adjust for Bayesian opponent model #
+    if opponent_profile["tightness"] > 0.65:
+        actions["raise"] *= 1.2
+    elif opponent_profile["tightness"] < 0.35:
+        actions["fold"] *= 0.8
+    
+    if opponent_profile["aggression"] > 0.65:
+        actions["call"] *= 1.2
+    

@@ -649,7 +649,7 @@ player_money = initial_money
 opponent_money = initial_money
 player_names = ["player", "AikiAI", "KeokiAI", "EllisAI"]
 def play_round():
-    global player_hand, opponent_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    global player_hand, aiki_AI_hand, keoki_AI_hand, ellis_AI_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
     deck = create_deck()
     load_card_images(deck)
     random.shuffle(deck)
@@ -666,11 +666,15 @@ def play_round():
     player_lost = False
     AI_lost = False
     draw_hand(2, deck, player_hand)
-    draw_hand(2, deck, opponent_hand)
+    draw_hand(2, deck, aiki_AI_hand)
+    draw_hand(2, deck, keoki_AI_hand)
+    draw_hand(2, deck, ellis_AI_hand)
     while running:
         screen.fill((0, 128, 0))
         display_hand(player_hand)
-        display_hand(opponent_hand)
+        display_hand(aiki_AI_hand)
+        display_hand(keoki_AI_hand)
+        display_hand(ellis_AI_hand)
         display_hand(community_cards)
         render_chips()
         pygame.display.flip()

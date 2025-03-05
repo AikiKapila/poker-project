@@ -1,5 +1,5 @@
 import random
-from pokergame import create_deck, draw_card, draw_hand, get_hand_rank, get_card_values
+from poker_utils import create_deck, draw_card, draw_hand, get_hand_rank, get_card_values
 
 class BayesianOpponentModel:
     def __init__(self, name):
@@ -112,22 +112,22 @@ def make_decision(hand, community_cards, opponent_model, game_state):
     pot_size = game_state["pot"]
     prev_bet = game_state["prev_bet"]
     player_money = game_state["player_money"]
-    ai_money = game_state["opponent_money"]
+    ai_money = game_state["ai_money"]
 
     actions = {"fold": 0.0, "check": 0.0, "call": 0.0, "raise": 0.0}
 
     # Initial decision making based on monte carlo win percentage #
-    if win_probability < 0.2:
+    if win_probability < 0.3:
         actions["fold"] = 0.6
         actions["check"] = 0.3
         actions["call"] = 0.1
         actions["raise"] = 0.0
-    elif win_probability < 0.4:
+    elif win_probability < 0.5:
         actions["fold"] = 0.3
         actions["check"] = 0.4
         actions["call"] = 0.2
         actions["raise"] = 0.1
-    elif win_probability < 0.6:
+    elif win_probability < 0.7:
         actions["fold"] = 0.0
         actions["check"] = 0.3
         actions["call"] = 0.4
@@ -176,11 +176,14 @@ def make_decision(hand, community_cards, opponent_model, game_state):
         actions["raise"] *= 0.6
         actions["call"] *= 1.2
     elif effective_stack > pot_size * 3:
-        actions["raise"] *= 1.3
+        actions["raise"] *= 1.2
         actions["call"] *= 1.2
         actions["fold"] *= 0.8
 
-    pot_odds = (prev_bet / (pot_size + prev_bet))
+    if pot_size + prev_bet == 0:
+        pot_odds = 0
+    else:
+        pot_odds = (prev_bet / (pot_size + prev_bet))
     if win_probability > pot_odds:
         actions["call"] *= 1.3
     else:
@@ -191,5 +194,27 @@ def make_decision(hand, community_cards, opponent_model, game_state):
         actions["fold"] = 0
         actions["call"] = 0
 
-    best_action = max(actions, key=actions.get)    
-    return best_action
+    best_action = max(actions, key=actions.get)
+    bet_size = 0
+
+    if best_action == "raise":
+        max_bet = min(game_state["player_money"], game_state["ai_money"])
+        if win_probability < 0.4:
+            base_bet = effective_stack * 0.2 # Small bet for weaker hands
+        elif win_probability < 0.6:
+            base_bet = effective_stack * 0.3  # Medium bet for decent hands
+        else:
+            base_bet = effective_stack * 0.5  # Large bet for strong hands
+    
+        # Adjust for opponent tendencies
+        if opponent_model.tightness > 0.65:  # Tight opponents fold to large bets
+            base_bet *= 1.2
+        elif opponent_model.tightness < 0.35:  # Loose opponents call more
+            base_bet *= 0.8
+
+        bet_amount = min(base_bet, max_bet)
+        bet_size = round(bet_amount)
+
+    print(actions)
+
+    return best_action, bet_size

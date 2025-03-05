@@ -4,8 +4,8 @@ import math
 import pygame_widgets
 from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
-from collections import Counter
-from AikiAIOpponent import BayesianOpponentModel, monte_carlo_simulation
+from poker_utils import create_deck, draw_card, draw_hand, get_hand_rank, get_card_values
+from AikiAIOpponent import BayesianOpponentModel, make_decision
 
 
 # Pygame Set Up #
@@ -43,23 +43,6 @@ def display_text(screen, text, value, coordinates, font_size=24, color=(255, 255
     # Blit the text surface onto the screen
     screen.blit(text_surface, text_rect)
 
-# CARD CREATION #
-class Card:
-    def __init__(self, number, suit, image=None):
-        match number:
-            case 1:
-                self.n = "A"
-            case 11:
-                self.n = "J"
-            case 12:  
-                self.n = "Q"
-            case 13:
-                self.n = "K"
-            case _:
-                self.n = number
-        self.s = suit
-        self.image = image
-
 oppenent_win=0
 player_win=0
 
@@ -72,30 +55,12 @@ def load_card_images(cards):
         except pygame.error as e:
             print(f"Error loading image {card_image_file}: {e}")
 
-# Function to make deck #
-def create_deck():
-    suits = ['H', 'D', 'C', 'S']
-    deck = [Card(number, suit) for suit in suits for number in range(1, 13)]
-    return deck
-
-# Function to draw a card from the deck #
-def draw_card(deck, hand):
-    if deck:
-        hand.append(deck[0])
-        deck.pop(0)
-    else:
-        return None  # Return None if the deck is empty
-
-def draw_hand(draw_num, deck, hand):
-    for i in range(draw_num):
-        draw_card(deck, hand)
-
 def display_card(card, index, total_cards, hand):
     global revealing_cards
     card_image = card.image
     if hand == player_hand:
         hand_pos = 9
-    elif hand == opponent_hand:
+    elif hand == aiki_AI_hand:
         hand_pos = 3
         if not revealing_cards:
             card_image = pygame.image.load(f"card-back.jpg")
@@ -146,7 +111,7 @@ def display_chips(pile, x, y):
     # Draw pyramid
     current_row = rows
     chips_placed = 0
-    while current_row > 0:
+    while current_row > 0 or (pile > 0 and chips_placed == 0):
         for i in range(current_row + 1):
             if chips_placed < math.ceil(pile / 100):
                 offset_x = x + ((current_row-1) * chips_width / 4) - (i * (chips_width/2))
@@ -206,28 +171,65 @@ def delete_slider(x,y,width,height): #delete slider with given coords of slider(
 
 playercount = 2 # can be changed later if we want to add more players without needing to code in #
 bet_turn = 1
+
 def bet_phase():
-    global prev_bet, last_player, bet_turn, round_complete, in_raise
+    global prev_bet, last_player, bet_turn, round_complete, in_raise, player_bets
     # 0 is neutral, 1 is player, 2 is AI #
     prev_bet = 0
     in_raise = False
+    bet_turn = 1
+    player_acted = False
+    ai_acted = False
+    #if current_dealer == 0 else 2
     last_player = playercount
     round_complete = False
+
+    if phase == "pre-flop":
+        apply_blinds()
+
+    player_bets = {1: 0, 2: 0}  # Track individual player bets
+    #active_players = {1, 2} # Players still active in the round
+
     while not round_complete and not player_lost and not AI_lost:
         render_chips()
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                global running
+                running = False
+                pygame.quit()
+                return
         if bet_turn == 1:
+        #and 1 in active_players:
             player_turn()
             print("player turn")
-        else:
+            player_acted = True
+            #if player_lost:
+            #    active_players.remove(1)
+            #else:
+            #    player_bets[1] = prev_bet
+            bet_turn = 2
+        elif bet_turn == 2:
+        #and 2 in active_players:
             # AI turn to be added #
             AI_turn()
-            print("ai turn")
+            ai_acted = True
+            #if AI_lost:
+            #    active_players.remove(2)
+            #else:
+            #    player_bets[2] = prev_bet
+            bet_turn = 1
+        
         print("past both turns")
-        if bet_turn != last_player:
-            bet_turn = (bet_turn % playercount) + 1
-        else:
-            round_complete = True
-
+        if player_acted and ai_acted:
+            if player_bets[1] == player_bets[2]:
+                round_complete = True
+                print("Round complete - both players have equal bets")
+            else:
+                # Reset the flags if bets aren't equal
+                player_acted = False
+                ai_acted = False
+                print(f"Continuing round - player bet: {player_bets[1]}, AI bet: {player_bets[2]}")
     print("Betting round complete")
 
 def player_turn():
@@ -256,10 +258,12 @@ def player_turn():
         check_button = Button(950, 700, 100, 50, "Check", Check)
         buttons.insert(0, check_button)
     playerturn_running=True
-    while playerturn_running:
+    turn_action_taken = False
+    while playerturn_running and not turn_action_taken:
         for button in buttons:
             button.draw(screen)
         pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 print("mousebuttondown")
@@ -268,37 +272,47 @@ def player_turn():
                     if button.is_hovered(mouse_pos):
                         button.handle_click(mouse_pos)
                         print("Button")
+                        turn_action_taken = True
                         playerturn_running=False
             elif event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
                 quit()
         
+
+clear_text = pygame.Rect(1000, 180, 250, 60)
+
 def AI_turn():
-    global bet_turn, last_player, opponent_money, prev_bet, pot, AI_lost, clear_text, phase
+    global bet_turn, last_player, aiki_AI_money, prev_bet, pot, AI_lost, phase, player_bets
     print("AI turn")
-    clear_text = pygame.Rect(1000, 180, 250, 60)
+
     pygame.draw.rect(screen, (0, 128, 0), clear_text)
 
-    action, bet_amount = make_decision()
+    game_state = {"pot":pot, "prev_bet": prev_bet, "player_money": player_money, "ai_money": aiki_AI_money}
+    action, bet_amount = make_decision(aiki_AI_hand, community_cards, opponent_list[0], game_state)
 
     if action == "raise":
-        raise_amount = min(bet_amount, opponent_money)  # Ensure AI doesn't bet more than it has
+        raise_amount = min(bet_amount, aiki_AI_money)  # Ensure AI doesn't bet more than it has
         prev_bet = raise_amount
         pot += raise_amount
-        opponent_money -= raise_amount
-        last_player -= 1
-        display_text(screen, f"AI raises {raise_amount}", False, (1000, 200), 50)
+        aiki_AI_money -= raise_amount
+        player_bets[2] = raise_amount
+        display_text(screen, "AI raises", raise_amount, (1000, 200), 50)
+        pygame.display.flip()
     
     elif action == "check":
+        player_bets[2] = prev_bet
         display_text(screen, "AI checks", False, (1000, 200), 50)
-    
+        pygame.display.flip()
+
     elif action == "call":
-        call_amount = min(prev_bet, opponent_money)  # Call the previous bet
+        call_amount = min(prev_bet, aiki_AI_money)  # Call the previous bet
         pot += call_amount
-        opponent_money -= call_amount
-        display_text(screen, f"AI calls {call_amount}", False, (1000, 200), 50)
-    
+        aiki_AI_money -= call_amount
+        player_bets[2] = call_amount
+        display_text(screen, "AI calls", call_amount, (1000, 200), 50)
+        pygame.display.flip()
+
     elif action == "fold":
         print("AI folds")
         display_text(screen, "AI folds", False, (1000, 200), 50)
@@ -311,18 +325,18 @@ def AI_turn():
     else:
         print("Invalid action specified")
 
-def aiki_AI_make_decision():
-    win_probability = monte_carlo_simulation()
+    pygame.display.flip()
+    pygame.time.wait(2000)
 
 
 def render_chips():
     clear_chips = pygame.Rect(0, 0, 350, 1500)
     pygame.draw.rect(screen, (0,128,0), clear_chips)
     display_text(screen, "Player Chips", player_money, (100,800))
-    display_text(screen, "Opponents Chips", opponent_money, (100,250))
+    display_text(screen, "Opponents Chips", aiki_AI_money, (100,250))
     display_text(screen, "Pot", pot, (100, 550))
     display_chips(player_money, 180, 700)
-    display_chips(opponent_money, 180, 150)
+    display_chips(aiki_AI_money, 180, 150)
     display_chips(pot, 180, 450)
 
 def move_to_next_phase():
@@ -351,19 +365,25 @@ def move_to_next_phase():
     pygame.display.flip()
 
 def Check():
-    global bet_turn, pot
-    pot += 0
+    global bet_turn, playerturn_running
+    opponent_list[0].track_action("check", phase)
     print("Check")
-    if bet_turn == last_player:
-        move_to_next_phase()
+    playerturn_running = False
+    player_bets[1] = prev_bet
+    bet_turn = 2
+    #if bet_turn == last_player:
+        #move_to_next_phase()
 
 def Call():
-    global pot, player_money, bet_turn
+    global pot, player_money, bet_turn, playerturn_running
     pot += prev_bet
     player_money -= prev_bet
-    print(player_money)
-    print(pot)
+    opponent_list[0].track_action("call", phase)
     print("Call")
+    player_bets[1] = prev_bet
+    playerturn_running = False
+    #if bet_turn != last_player:
+        #bet_turn = (bet_turn % playercount) + 1
 
 def Raise():
     global prev_bet, last_player, pot, player_money, in_raise, buttons, raise_button,check_button,call_button,fold_button, cancel_button, confirm_button, all_in
@@ -433,16 +453,17 @@ def ConfirmRaise():
     global bet_check, in_raise, bet_turn, all_in
     in_raise = False
     bet_check+=1
+    opponent_list[0].track_action("raise", phase)
     delete_slider(973, 575, 300, 50)
     delete_slider(1090, 645, 80, 50)
     delete_button(screen,confirm_button)
     delete_button(screen,cancel_button)
-    print(pot)
 
 def Fold():
     global player_lost, phase
     print("Fold")
     player_lost = True
+    opponent_list[0].track_action("fold", phase)
     phase = "showdown"
     Showdown()
 
@@ -468,7 +489,7 @@ def Showdown():
     global revealing_cards
     # Win conditions #
     revealing_cards = True
-    display_hand(opponent_hand)
+    display_hand(aiki_AI_hand)
     ResolveGame()
     for opponent in opponent_list:
         if opponent.current_hand_actions["fold"] == 0:
@@ -477,7 +498,7 @@ def Showdown():
     #checkwin()
 
 def ResolveGame():
-    global opponent_money, player_money, pot, revealing_cards, playerturn_running, player_lost, AI_lost
+    global aiki_AI_money, player_money, pot, revealing_cards, playerturn_running, player_lost, AI_lost
     try:
         delete_button(screen, call_button)
     except NameError:
@@ -488,10 +509,10 @@ def ResolveGame():
         pygame.draw.rect(screen, (0, 128, 0), clear_text)
     except NameError:
         pass
-    if not AI_lost and compare_hands(player_hand+ community_cards, opponent_hand + community_cards) == "Opponent wins!":
+    if not AI_lost and compare_hands(player_hand+ community_cards, aiki_AI_hand + community_cards) == "Aiki's AI wins!":
         player_lost = True
     if player_lost:
-        opponent_money += pot
+        aiki_AI_money += pot
     else:
         player_money += pot
     pot = 0
@@ -501,8 +522,8 @@ def ResolveGame():
         elif AI_lost:
             display_text(screen, "Player wins!", False, (1000, 200), 50)
         else:
-            display_text(screen, compare_hands(player_hand + community_cards, opponent_hand + community_cards), False, (1000, 200), 50)
-        if player_money > 0 and opponent_money > 0:
+            display_text(screen, compare_hands(player_hand + community_cards, aiki_AI_hand + community_cards), False, (1000, 200), 50)
+        if player_money > 0 and aiki_AI_money > 0:
             next_round_button = Button(1075, 700, 200, 50, "Next Round", start_next_round)
             next_round_button.draw(screen)
         else:
@@ -535,81 +556,6 @@ def initialize_opponent_model():
     opponent_names.remove("AikiAI")
     opponent_list = [BayesianOpponentModel(opponent) for opponent in opponent_names]
 
-# Hand evaluation functions
-def get_card_values(cards):
-    values = []
-    for card in cards:
-        if card.n == "A":
-            values.append(14)
-        elif card.n == "K":
-            values.append(13)
-        elif card.n == "Q":
-            values.append(12)
-        elif card.n == "J":
-            values.append(11)
-        else:
-            values.append(card.n)
-    return values
-
-
-def is_flush(cards):
-    return len(set(card.s for card in cards)) == 1
-
-def is_straight(cards):
-    values = sorted(get_card_values(cards))
-    return values == list(range(values[0], values[0] + 5))
-
-def get_hand_rank(cards):
-    values = get_card_values(cards)
-    counts = Counter(values)
-    most_common = counts.most_common()
-    
-    is_flush_hand = is_flush(cards)
-    is_straight_hand = is_straight(cards)
-
-    # Check for straight flush (flush + straight)
-    if is_flush_hand and is_straight_hand:
-        if max(values) == 14 and min(values) == 10:  # Royal flush check (Ace high straight flush)
-            return 10, values  # Royal Flush
-        return 9, values  # Straight Flush
-
-    # Check for four of a kind
-    if most_common[0][1] == 4:
-        return 8, values
-
-    # Full house: Three of a kind + pair
-    try:
-        if most_common[0][1] == 3 and most_common[1][1] == 2:
-            return 7, values
-    except IndexError:
-        pass
-
-    # Flush
-    if is_flush_hand:
-        return 6, sorted(values, reverse=True)
-
-    # Straight
-    if is_straight_hand:
-        return 5, sorted(values, reverse=True)
-
-    # Three of a kind
-    if most_common[0][1] == 3:
-        return 4, values
-
-    # Two pair
-    try:
-        if most_common[0][1] == 2 and most_common[1][1] == 2:
-            return 3, values
-    except IndexError:
-        pass
-
-    # One pair
-    if most_common[0][1] == 2:
-        return 2, values
-
-    # High card
-    return 1, sorted(values, reverse=True)
-
 def compare_hands(hand1, hand2):
     global oppenent_win,player_win
     rank1, values1 = get_hand_rank(hand1)
@@ -636,27 +582,65 @@ def start_next_round():
     playerturn_running = False
     revealing_cards = False
     bet_turn = 1
+    rotate_dealer()
     screen.fill((0, 128, 0))
     print("Starting next round...")
     play_round()
 
+def apply_blinds():
+    global player_money, aiki_AI_money, pot, current_dealer, prev_bet
+    if current_dealer == 0:
+        aiki_AI_money -= small_blind
+        display_text(screen, f"Small Blind: {small_blind}", False, (1000, 200), 50)
+        pygame.display.update()
+        pygame.time.wait(1500)
+        player_money -= big_blind
+        pygame.draw.rect(screen, (0, 128, 0), clear_text)
+        display_text(screen, f"Big Blind: {big_blind}", False, (1000, 200), 50)
+    else:
+        player_money -= small_blind
+        display_text(screen, f"Small Blind: {small_blind}", False, (1000, 200), 50)
+        pot += small_blind
+        pygame.display.update()
+        pygame.time.wait(1500)
+        aiki_AI_money -= big_blind
+        pygame.draw.rect(screen, (0, 128, 0), clear_text)
+        display_text(screen, f"Big Blind: {big_blind}", False, (1000, 200), 50)
+        pygame.display.update()
+        pygame.time.wait(1500)
+    pot += big_blind
+    #prev_bet = big_blind
+    
+    
+
+def rotate_dealer():
+    global current_dealer
+    current_dealer = (current_dealer + 1) % playercount
+
 # Main Game Loop #
 running = True
+small_blind = 10
+big_blind = 20
+current_dealer = 0
 # Creating the pot#
 initial_money = 1000
 pot = 0
 player_money = initial_money
-opponent_money = initial_money
-player_names = ["player", "AikiAI", "KeokiAI", "EllisAI"]
+aiki_AI_money = initial_money
+player_names = ["player", "AikiAI"]
+initialize_opponent_model()
+#, "KeokiAI", "EllisAI"]
+
 def play_round():
-    global player_hand, aiki_AI_hand, keoki_AI_hand, ellis_AI_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    global player_hand, aiki_AI_hand, community_cards, deck, phase, revealing_cards, all_in, running, player_lost, AI_lost
+    #keoki_AI_hand, ellis_AI_hand
     deck = create_deck()
     load_card_images(deck)
     random.shuffle(deck)
     player_hand = []
     aiki_AI_hand = []
-    keoki_AI_hand = []
-    ellis_AI_hand = []
+    #keoki_AI_hand = []
+    #ellis_AI_hand = []
     community_cards = []
     print("round starting...")
     screen.fill((0, 128, 0))
@@ -665,28 +649,34 @@ def play_round():
     all_in = False
     player_lost = False
     AI_lost = False
+
     draw_hand(2, deck, player_hand)
     draw_hand(2, deck, aiki_AI_hand)
-    draw_hand(2, deck, keoki_AI_hand)
-    draw_hand(2, deck, ellis_AI_hand)
+    #draw_hand(2, deck, keoki_AI_hand)
+    #draw_hand(2, deck, ellis_AI_hand)
     while running:
         screen.fill((0, 128, 0))
         display_hand(player_hand)
         display_hand(aiki_AI_hand)
-        display_hand(keoki_AI_hand)
-        display_hand(ellis_AI_hand)
+        #display_hand(keoki_AI_hand)
+        #display_hand(ellis_AI_hand)
         display_hand(community_cards)
         render_chips()
         pygame.display.flip()
+
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
-        while phase != "showdown":
-            bet_phase()
-            move_to_next_phase()
-        pygame.display.flip()
-        pygame.time.Clock().tick(60)
+                    return
+        
+        bet_phase()
+        move_to_next_phase()
+    if phase == "showdown":
+        Showdown()
+        
+    pygame.display.flip()
+    pygame.time.Clock().tick(60)
 
 play_round()
 
